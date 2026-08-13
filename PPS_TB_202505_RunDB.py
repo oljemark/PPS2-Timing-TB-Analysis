@@ -179,7 +179,8 @@ run_config_info = {
             7: "LA02",
             8: "LA05",
             9: "LA06",
-        }
+        },
+        flip=True
     ),
     "Config2": ConfigInformation(
         name = "Config 2",
@@ -212,7 +213,8 @@ run_config_info = {
             7: "LA02",
             8: "LA05",
             9: "LA06",
-        }
+        },
+        flip=True
     ),
     "Config3": ConfigInformation(
         name = "Config 3",
@@ -245,7 +247,8 @@ run_config_info = {
             7: "LA02",
             8: "LA05",
             9: "LA06",
-        }
+        },
+        flip=True
     ),
     "Config4": ConfigInformation(
         name = "Config 4",
@@ -278,7 +281,8 @@ run_config_info = {
             7: "LA02",
             8: "LA04",
             9: "LA05",
-        }
+        },
+        flip=True
     ),
     "Config4a": ConfigInformation(
         name = "Config 4a",
@@ -311,7 +315,8 @@ run_config_info = {
             7: "LA02",
             8: "LA04",
             9: "LA05",
-        }
+        },
+        flip=True
     ),
     "Config5": ConfigInformation(
         name = "Config 5",
@@ -344,7 +349,8 @@ run_config_info = {
             7: "LA02",
             8: "LA03",
             9: "LA04",
-        }
+        },
+        flip=True
     ),
     "Config6": ConfigInformation(
         name = "Config 6",
@@ -377,7 +383,8 @@ run_config_info = {
             7: "LA02",
             8: "LA03",
             9: "LA04",
-        }
+        },
+        flip=True
     ),
     "Config7": ConfigInformation(
         name = "Config 7",
@@ -410,7 +417,8 @@ run_config_info = {
             7: "LA02",
             8: "LA06",
             9: "LA03",
-        }
+        },
+        flip=True
     ),
     "Config8": ConfigInformation(
         name = "Config 8",
@@ -443,7 +451,8 @@ run_config_info = {
             7: "LA02",
             8: "LA05",
             9: "LA06",
-        }
+        },
+        flip=True
     ),
     "Config9": ConfigInformation(
         name = "Config 9",
@@ -476,7 +485,8 @@ run_config_info = {
             7: "LA02",
             8: "CA03",
             9: "LA06",
-        }
+        },
+        flip=True
     ),
     "Config10": ConfigInformation(
         name = "Config 10",
@@ -509,7 +519,8 @@ run_config_info = {
             7: "LA02",
             8: "CA03",
             9: "LA06",
-        }
+        },
+        flip=True
     ),
     "Config11": ConfigInformation(
         name = "Config 11",
@@ -542,7 +553,8 @@ run_config_info = {
             7: "DA01-20dB",
             8: "AA09",
             9: "AA10",
-        }
+        },
+        flip=True
     ),
     "Config12": ConfigInformation(
         name = "Config 12",
@@ -575,7 +587,8 @@ run_config_info = {
             7: "LA03",
             8: "LA04",
             9: "LA06",
-        }
+        },
+        flip=True
     ),
     "Config13": ConfigInformation(
         name = "Config 13",
@@ -608,7 +621,8 @@ run_config_info = {
             7: "LA03",
             8: "LA04",
             9: "LA06",
-        }
+        },
+        flip=True
     ),
     "Config14": ConfigInformation(
         name = "Config 14",
@@ -641,7 +655,8 @@ run_config_info = {
             7: "LA03",
             8: "LA04",
             9: "LA06",
-        }
+        },
+        flip=True
     ),
 }
 
