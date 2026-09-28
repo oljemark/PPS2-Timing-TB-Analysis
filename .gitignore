@@ -1,6 +1,7 @@
 venv/*
 data/*
 /.ipynb_checkpoints/*
+/*.png
 
 *.py[cod]
 __pycache__
