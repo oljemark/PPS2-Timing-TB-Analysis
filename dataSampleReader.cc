@@ -15,10 +15,12 @@ void dataSampleReader()
   auto viewCh = reader->GetView<uint8_t>("Channel");
   auto viewTSPSint = reader->GetView<int64_t>("FirstSampleTime_in_ps");
   auto hBase21=new TH1F("histBaseline21","Recalculated baseline, entries 1-20",2000,-1.,1.);
-  std::vector<TH1F*> hBases,hAmpls,hDC50s;
+  int64_t lastDC50[10]={0}; // latest picosec time (DC50 corrected) for channel 0-9
+  std::vector<TH1F*> hBases,hAmpls,hDC50s,hCombos;
   hBases.reserve(10);
   hAmpls.reserve(10);
   hDC50s.reserve(10);
+  hCombos.reserve(100);
   for (uint8_t ch=0; ch<10;ch++)
    {
     std::string name="histBaseline_ch" + std::to_string(ch);
@@ -32,6 +34,15 @@ void dataSampleReader()
     name="histDC50sample_ch"+ std::to_string(ch);
     title="First sample reaching half amplitude, entries 21-53, channel="+ std::to_string(ch)+";Sample number";
     hDC50s.push_back(new TH1F(name.c_str(),title.c_str(),64,-1.5,62.5));
+
+    for (uint8_t ch2=0; ch2<10;ch2++)
+     {
+      name="timeDiff_ch"+ std::to_string(ch)+"_"+std::to_string(ch2);
+      title="Time difference of first sample reaching half amplitude,  channel="+ std::to_string(ch)
+           +" vs "+ std::to_string(ch2);
+      hCombos.push_back(new TH1F(name.c_str(),title.c_str(),2000,-10000.,10000.));
+
+     }
    }
   auto hPs50ch8=new TH1D("histPicosec50sample_ch8","First sample time in integer picoseconds reaching half amplitude, entries 21-53 (channel==8);Time (ps)",200,0.,8e15);
   std::uint64_t numEntries = reader->GetNEntries();
@@ -75,6 +86,14 @@ void dataSampleReader()
        }
       const int ps50=(j50 * 1000) / 6.4;
       const int64_t time50ps = picosec + ps50;
+      if ((amplitude > 0) && (jmax > 20))
+       {
+        for (uint8_t ch2=0; ch2<10; ch2++)
+         {
+          hCombos[10*ch+ch2]->Fill(time50ps - lastDC50[ch2]);
+         }
+        lastDC50[ch]=time50ps;
+       }
       hDC50s[ch]->Fill(j50);
       if (ch == 8)
        hPs50ch8->Fill(time50ps);
@@ -95,6 +114,10 @@ void dataSampleReader()
     hBases[ch]->Write();
     hAmpls[ch]->Write();
     hDC50s[ch]->Write();
+    for (uint8_t ch2=0; ch2<10;ch2++)
+     {
+      hCombos[10*ch+ch2]->Write();
+     }
    }
   hPs50ch8->Write();
   outFile->Close();
