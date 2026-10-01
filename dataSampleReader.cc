@@ -16,7 +16,7 @@ void dataSampleReader()
   auto hBase8=new TH1F("histBaseline21_ch8","Recalculated baseline, entries 1-20 (channel==8)",2000,-1.,1.);
   auto hAmpl8=new TH1F("histAmplitude21to53_ch8","Recalculated amplitude, entries 21-53 (channel==8)",2000,-1.,1.);
   auto hDC50ch8=new TH1F("histDC50sample_ch8","First sample reaching half amplitude, entries 21-53 (channel==8);Sample number (6400 MSamp/sec, 156 psec/sample)",64,-1.5,62.5);
-  auto hPs50ch8=new TH1D("histPicosec50sample_ch8","First sample time in integer picoseconds reaching half amplitude, entries 21-53 (channel==8);Time (ps)",2000,0.,-1.);
+  auto hPs50ch8=new TH1D("histPicosec50sample_ch8","First sample time in integer picoseconds reaching half amplitude, entries 21-53 (channel==8);Time (ps)",200,0.,8e15);
   std::uint64_t numEntries = reader->GetNEntries();
 
   //event loop
@@ -60,7 +60,8 @@ void dataSampleReader()
       const int64_t time50ps = picosec + ps50;
       hDC50ch8->Fill(j50);
       hPs50ch8->Fill(time50ps);
-      std::cout<<"time at half amplitude(ps):"<<time50ps<<"ps j50:"<<j50<<std::endl;
+      if (!(i%100))
+       std::cout<<"time at half amplitude(ps):"<<time50ps<<"ps j50:"<<j50<<std::endl;
       hAmpl8->Fill(amplitude);
      }
     if (!(i%10000))
