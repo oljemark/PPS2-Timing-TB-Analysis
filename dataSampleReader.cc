@@ -3,6 +3,8 @@
 #include <TH1D.h>
 #include <TFile.h>
 #include <array>
+#include <vector>
+#include <string>
 #include <iostream>
 
 void dataSampleReader()
@@ -13,9 +15,24 @@ void dataSampleReader()
   auto viewCh = reader->GetView<uint8_t>("Channel");
   auto viewTSPSint = reader->GetView<int64_t>("FirstSampleTime_in_ps");
   auto hBase21=new TH1F("histBaseline21","Recalculated baseline, entries 1-20",2000,-1.,1.);
-  auto hBase8=new TH1F("histBaseline21_ch8","Recalculated baseline, entries 1-20 (channel==8)",2000,-1.,1.);
-  auto hAmpl8=new TH1F("histAmplitude21to53_ch8","Recalculated amplitude, entries 21-53 (channel==8)",2000,-1.,1.);
-  auto hDC50ch8=new TH1F("histDC50sample_ch8","First sample reaching half amplitude, entries 21-53 (channel==8);Sample number (6400 MSamp/sec, 156 psec/sample)",64,-1.5,62.5);
+  std::vector<TH1F*> hBases,hAmpls,hDC50s;
+  hBases.reserve(10);
+  hAmpls.reserve(10);
+  hDC50s.reserve(10);
+  for (uint8_t ch=0; ch<10;ch++)
+   {
+    std::string name="histBaseline_ch" + std::to_string(ch);
+    std::string title="Recalculated baseline, entries 1-20, channel=" + std::to_string(ch);
+    hBases.push_back(new TH1F(name.c_str(),title.c_str(),2000,-1.,1.));
+
+    name="histAmplitude21to53_ch"+ std::to_string(ch);
+    title="Recalculated amplitude, entries 21-53, channel="+ std::to_string(ch);
+    hAmpls.push_back(new TH1F(name.c_str(),title.c_str(),2000,-1.,1.));
+
+    name="histDC50sample_ch"+ std::to_string(ch);
+    title="First sample reaching half amplitude, entries 21-53, channel="+ std::to_string(ch)+";Sample number";
+    hDC50s.push_back(new TH1F(name.c_str(),title.c_str(),64,-1.5,62.5));
+   }
   auto hPs50ch8=new TH1D("histPicosec50sample_ch8","First sample time in integer picoseconds reaching half amplitude, entries 21-53 (channel==8);Time (ps)",200,0.,8e15);
   std::uint64_t numEntries = reader->GetNEntries();
 
@@ -36,9 +53,9 @@ void dataSampleReader()
      baseline+=samples[j];
     baseline=baseline/20.;
     hBase21->Fill(baseline);
-    if (ch==8)
+    if (ch<10)
      {
-      hBase8->Fill(baseline);
+      hBases[ch]->Fill(baseline);
       float max=baseline;
       int jmax=20;
       for (int j=21;j<54;j++)
@@ -58,11 +75,12 @@ void dataSampleReader()
        }
       const int ps50=(j50 * 1000) / 6.4;
       const int64_t time50ps = picosec + ps50;
-      hDC50ch8->Fill(j50);
-      hPs50ch8->Fill(time50ps);
+      hDC50s[ch]->Fill(j50);
+      if (ch == 8)
+       hPs50ch8->Fill(time50ps);
       if (!(i%100))
-       std::cout<<"time at half amplitude(ps):"<<time50ps<<"ps j50:"<<j50<<std::endl;
-      hAmpl8->Fill(amplitude);
+       std::cout<<"time at half amplitude(ps):"<<time50ps<<"ps j50:"<<j50<<" ch:"<<std::to_string(ch)<<std::endl;
+      hAmpls[ch]->Fill(amplitude);
      }
     if (!(i%10000))
      {
@@ -70,11 +88,14 @@ void dataSampleReader()
       <<lastElement<<std::endl;
      }
    }
-  auto outFile=TFile::Open("amplitudes-run044.root","RECREATE");
+  auto outFile=TFile::Open("amplitudes-run044-tenCh.root","RECREATE");
   hBase21->Write();
-  hBase8->Write();
-  hAmpl8->Write();
-  hDC50ch8->Write();
+  for (uint8_t ch=0; ch<10;ch++)
+   {
+    hBases[ch]->Write();
+    hAmpls[ch]->Write();
+    hDC50s[ch]->Write();
+   }
   hPs50ch8->Write();
   outFile->Close();
  }
