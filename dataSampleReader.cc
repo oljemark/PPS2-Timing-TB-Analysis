@@ -7,7 +7,7 @@
 
 void dataSampleReader()
  {
-  auto reader = ROOT::RNTupleReader::Open("sampic_hits", "root_20260810_171519_run44.root");
+  auto reader = ROOT::RNTupleReader::Open("sampic_hits", "root_20260810_run44_full.root");
   auto viewArr = reader->GetView<std::array<float, 64>>("DataSample");
   // may be int32 in 2025 data? No, in earlier version of SAMPIClyser before 0.2.0
   auto viewCh = reader->GetView<uint8_t>("Channel");
@@ -20,7 +20,7 @@ void dataSampleReader()
   std::uint64_t numEntries = reader->GetNEntries();
 
   //event loop
-  for (std::uint64_t i = 0; (i < numEntries)&& (i<130000); ++i)
+  for (std::uint64_t i = 0; (i < numEntries)&& (i<13000000); ++i)
    {
     // viewArr(i) returns a const reference to the std::array<float, 64> at entry i
     const std::array<float, 64>& samples = viewArr(i);
@@ -63,13 +63,13 @@ void dataSampleReader()
       std::cout<<"time at half amplitude(ps):"<<time50ps<<"ps j50:"<<j50<<std::endl;
       hAmpl8->Fill(amplitude);
      }
-    if (!(i%1000)) 
+    if (!(i%10000))
      {
       std::cout<<"i"<<i<<"First entry: "<<firstElement<<" last:"
       <<lastElement<<std::endl;
      }
    }
-  auto outFile=TFile::Open("amplitudes.root","RECREATE");
+  auto outFile=TFile::Open("amplitudes-run044.root","RECREATE");
   hBase21->Write();
   hBase8->Write();
   hAmpl8->Write();
