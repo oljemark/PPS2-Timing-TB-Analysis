@@ -7,6 +7,15 @@
 #include <string>
 #include <iostream>
 
+struct waves
+ {
+  int64_t coarseTime{0}; // time to first sample, ps
+  float amplitude{0.};
+  int64_t timeAtDC50{0}; // time at midpoint of rising edge, ps
+  int maxbin{0}; // max amplitude bin, out of 64
+  int binDC50{0}; // 1st half amplitude bin, out of 64
+ };
+
 void dataSampleReader()
  {
   auto reader = ROOT::RNTupleReader::Open("sampic_hits", "root_20260810_run44_full.root");
@@ -21,6 +30,8 @@ void dataSampleReader()
   hAmpls.reserve(10);
   hDC50s.reserve(10);
   hCombos.reserve(100);
+  std::vector<waves> chWaves[10];
+
   for (uint8_t ch=0; ch<10;ch++)
    {
     std::string name="histBaseline_ch" + std::to_string(ch);
@@ -66,6 +77,8 @@ void dataSampleReader()
     hBase21->Fill(baseline);
     if (ch<10)
      {
+      waves wave;
+      wave.coarseTime = picosec;
       hBases[ch]->Fill(baseline);
       float max=baseline;
       int jmax=20;
@@ -76,6 +89,8 @@ void dataSampleReader()
          jmax=j;
         }
       float amplitude=max-baseline;
+      wave.amplitude=amplitude;
+      wave.maxbin=jmax;
       float dc50=amplitude*0.5;
       int j50=20;
       while (j50<jmax)
@@ -84,8 +99,11 @@ void dataSampleReader()
          break;
         j50++;
        }
+      wave.binDC50=j50;
       const int ps50=(j50 * 1000) / 6.4;
       const int64_t time50ps = picosec + ps50;
+      wave.timeAtDC50=time50ps;
+      chWaves[ch].push_back(wave);
       if ((amplitude > 0) && (jmax > 20))
        {
         for (uint8_t ch2=0; ch2<10; ch2++)
@@ -107,10 +125,11 @@ void dataSampleReader()
       <<lastElement<<std::endl;
      }
    }
-  auto outFile=TFile::Open("amplitudes-run044-tenCh.root","RECREATE");
+  auto outFile=TFile::Open("amplitudes-run044-tenCh-v2.root","RECREATE");
   hBase21->Write();
   for (uint8_t ch=0; ch<10;ch++)
    {
+    std::cout<<chWaves[ch].size()<<std::endl;
     hBases[ch]->Write();
     hAmpls[ch]->Write();
     hDC50s[ch]->Write();
