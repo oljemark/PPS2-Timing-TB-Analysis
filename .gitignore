@@ -2,6 +2,7 @@ venv/*
 data/*
 /.ipynb_checkpoints/*
 /*.png
+/*.C
 
 *.py[cod]
 __pycache__

@@ -24,6 +24,7 @@ void dataSampleReader()
   auto viewCh = reader->GetView<uint8_t>("Channel");
   auto viewTSPSint = reader->GetView<int64_t>("FirstSampleTime_in_ps");
   auto hBase21=new TH1F("histBaseline21","Recalculated baseline, entries 1-20",2000,-1.,1.);
+  auto hNearC=new TH1F("histNearCh_coarse","Hits in channels 0-9, with firstSampleTime within 20 ns",1,0.,1.);
   int64_t lastDC50[10]={0}; // latest picosec time (DC50 corrected) for channel 0-9
   std::vector<TH1F*> hBases,hAmpls,hDC50s,hCombos;
   hBases.reserve(10);
@@ -136,8 +137,21 @@ void dataSampleReader()
     for (uint8_t ch2=0; ch2<10;ch2++)
      {
       hCombos[10*ch+ch2]->Write();
+      if (ch2==ch) continue;
+      for (const auto& wave1: chWaves[ch])
+       {
+        for (const auto& wave2: chWaves[ch2])
+         {
+          if (std::abs(wave1.coarseTime - wave2.coarseTime) < 20000)
+           {
+	    std::string labl=std::to_string(ch)+","+std::to_string(ch2);
+	    hNearC->Fill(labl.c_str(),1.);
+           }
+         }
+       }
      }
    }
+  hNearC->Write();
   hPs50ch8->Write();
   outFile->Close();
  }
