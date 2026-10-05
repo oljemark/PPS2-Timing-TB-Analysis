@@ -24,7 +24,7 @@ void dataSampleReader()
   auto viewCh = reader->GetView<uint8_t>("Channel");
   auto viewTSPSint = reader->GetView<int64_t>("FirstSampleTime_in_ps");
   auto hBase21=new TH1F("histBaseline21","Recalculated baseline, entries 1-20",2000,-1.,1.);
-  auto hNearC=new TH1F("histNearCh_coarse","Hits in channels 0-9, with firstSampleTime within 20 ns",1,0.,1.);
+  auto hNearC=new TH1F("histNearCh_coarse","Hits in channels 0-9, with firstSampleTime within 10 ns",1,0.,1.);
   int64_t lastDC50[10]={0}; // latest picosec time (DC50 corrected) for channel 0-9
   std::vector<TH1F*> hBases,hAmpls,hDC50s,hCombos;
   hBases.reserve(10);
@@ -126,7 +126,7 @@ void dataSampleReader()
       <<lastElement<<std::endl;
      }
    }
-  auto outFile=TFile::Open("amplitudes-run044-tenCh-v2.root","RECREATE");
+  auto outFile=TFile::Open("amplitudes-run044-tenCh-v3.root","RECREATE");
   hBase21->Write();
   for (uint8_t ch=0; ch<10;ch++)
    {
@@ -142,7 +142,7 @@ void dataSampleReader()
        {
         for (const auto& wave2: chWaves[ch2])
          {
-          if (std::abs(wave1.coarseTime - wave2.coarseTime) < 20000)
+          if (std::abs(wave1.coarseTime - wave2.coarseTime) < 10000)
            {
 	    std::string labl=std::to_string(ch)+","+std::to_string(ch2);
 	    hNearC->Fill(labl.c_str(),1.);
