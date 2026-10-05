@@ -50,10 +50,10 @@ void dataSampleReader()
 
     for (uint8_t ch2=0; ch2<10;ch2++)
      {
-      name="timeDiff_ch"+ std::to_string(ch)+"_"+std::to_string(ch2);
-      title="Time difference of first sample reaching half amplitude,  channel="+ std::to_string(ch)
-           +" vs "+ std::to_string(ch2);
-      hCombos.push_back(new TH1F(name.c_str(),title.c_str(),2000,-10000.,10000.));
+      name="timeDiff2_ch"+ std::to_string(ch)+"_"+std::to_string(ch2);
+      title="Time difference of first sample reaching half amplitude (max 20ns),  channel="+ std::to_string(ch)
+           +" vs "+ std::to_string(ch2)+";Time difference (ps)";
+      hCombos.push_back(new TH1F(name.c_str(),title.c_str(),400,-20000.,20000.));
 
      }
    }
@@ -108,10 +108,8 @@ void dataSampleReader()
       chWaves[ch].push_back(wave);
       if ((amplitude > 0) && (jmax > 20))
        {
-        for (uint8_t ch2=0; ch2<10; ch2++)
-         {
-          hCombos[10*ch+ch2]->Fill(time50ps - lastDC50[ch2]);
-         }
+        // for (uint8_t ch2=0; ch2<10; ch2++)
+        //  hCombos[10*ch+ch2]->Fill(time50ps - lastDC50[ch2]);
         lastDC50[ch]=time50ps;
        }
       hDC50s[ch]->Fill(j50);
@@ -127,7 +125,7 @@ void dataSampleReader()
       <<lastElement<<std::endl;
      }
    }
-  auto outFile=TFile::Open("amplitudes-run044-tenCh-v4.root","RECREATE");
+  auto outFile=TFile::Open("amplitudes-run044-tenCh-v5.root","RECREATE");
   hBase21->Write();
   for (uint8_t ch=0; ch<10;ch++)
    {
@@ -137,7 +135,6 @@ void dataSampleReader()
     hDC50s[ch]->Write();
     for (uint8_t ch2=0; ch2<10;ch2++)
      {
-      hCombos[10*ch+ch2]->Write();
       if (ch2==ch) continue;
       for (const auto& wave1: chWaves[ch])
        {
@@ -145,11 +142,13 @@ void dataSampleReader()
          {
           if (std::abs(wave1.timeAtDC50 - wave2.timeAtDC50) < 20000)
            {
-	    std::string labl=std::to_string(ch)+","+std::to_string(ch2);
-	    hNearFine->Fill(labl.c_str(),1.);
+            std::string labl=std::to_string(ch)+","+std::to_string(ch2);
+            hNearFine->Fill(labl.c_str(),1.);
+            hCombos[10*ch+ch2]->Fill(wave1.timeAtDC50 - wave2.timeAtDC50);
            }
          }
        }
+      hCombos[10*ch+ch2]->Write();
      }
    }
   hNearC->Write();
