@@ -3,6 +3,7 @@ data/*
 /.ipynb_checkpoints/*
 /plots/*.png
 /plots/*.C
+/dataSampleReader_cc*
 
 *.py[cod]
 __pycache__
