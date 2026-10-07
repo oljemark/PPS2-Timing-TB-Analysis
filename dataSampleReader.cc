@@ -25,6 +25,7 @@ void dataSampleReader()
   auto viewCh = reader->GetView<uint8_t>("Channel");
   auto viewTSPSint = reader->GetView<int64_t>("FirstSampleTime_in_ps");
   auto hBase21=new TH1F("histBaseline21","Recalculated baseline, entries 1-20",2000,-1.,1.);
+  auto hPolar=new TH1F("histPolarity","Recalculated amplitude per SAMPIC channel (negative numbers are channels with amplitude < 0);SAMPIC channel",65,-32.5,32.5);
 
   auto hBase32=new TH1F("histBaselinePMT","Recalculated baseline, entries 1-20 (channel 32=MCP-PMT)",2000,-1.,1.);
   auto hAmpl32=new TH1F("histAmplitudePMT","Recalculated amplitude (negative), entries 21-53 (channel 32=MCP-PMT)",2000,-1.,1.);
@@ -99,14 +100,22 @@ void dataSampleReader()
       pmt.coarseTime = picosec;
       hBase32->Fill(baseline);
       float min=baseline;
+      float max=baseline;
       int jmin=20;
       for (int j=21;j<54;j++)
-       if (min>samples[j])
-        {
-         min=samples[j];
-         jmin=j;
-        }
+       {
+        if (max<samples[j])
+         max=samples[j];
+        if (min>samples[j])
+         {
+          min=samples[j];
+          jmin=j;
+         }
+       }
       float amplitude=min-baseline;
+      float PAmplitude=max-baseline;
+      const int pole=((PAmplitude > -amplitude) ? 32 : -32);
+      hPolar->Fill(pole);
       pmt.amplitude=amplitude;
       hAmpl32->Fill(amplitude);
       pmt.maxbin=jmin;
@@ -144,14 +153,22 @@ void dataSampleReader()
       wave.coarseTime = picosec;
       hBases[ch]->Fill(baseline);
       float max=baseline;
+      float min=baseline;
       int jmax=20;
       for (int j=21;j<54;j++)
-       if (max<samples[j])
-        {
-         max=samples[j];
-         jmax=j;
-        }
+       {
+        if (min>samples[j])
+         min=samples[j];
+        if (max<samples[j])
+         {
+          max=samples[j];
+          jmax=j;
+         }
+       }
       float amplitude=max-baseline;
+      float MAmplitude=min-baseline;
+      const int pole=((-MAmplitude > amplitude) ? -ch : ch);
+      hPolar->Fill(pole);
       wave.amplitude=amplitude;
       wave.maxbin=jmax;
       float dc50=amplitude*0.5;
@@ -199,7 +216,7 @@ void dataSampleReader()
       <<lastElement<<std::endl;
      }
    }
-  auto outFile=TFile::Open("amplitudes-run044-11Ch-v9.root","RECREATE");
+  auto outFile=TFile::Open("amplitudes-run044-11Ch-v10.root","RECREATE");
   hBase21->Write();
   hBase32->Write();
   hAmpl32->Write();
@@ -243,6 +260,7 @@ void dataSampleReader()
       hCombos[10*ch+ch2]->Write();
      }
    }
+  hPolar->Write();
   hNearC->Write();
   hNearFine->Write();
   hNearPMT->Write();
