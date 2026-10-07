@@ -26,12 +26,12 @@ void dataSampleReader()
   auto hBase21=new TH1F("histBaseline21","Recalculated baseline, entries 1-20",2000,-1.,1.);
 
   auto hBase32=new TH1F("histBaselinePMT","Recalculated baseline, entries 1-20 (channel 32=MCP-PMT)",2000,-1.,1.);
-  auto hAmpl32=new TH1F("histAmplitudePMT","Recalculated amplitude, entries 21-53 (channel 32=MCP-PMT)",2000,-1.,1.);
+  auto hAmpl32=new TH1F("histAmplitudePMT","Recalculated amplitude (negative), entries 21-53 (channel 32=MCP-PMT)",2000,-1.,1.);
   auto hDC50_32=new TH1F("histDC50SamplePMT","First sample to reach half amplitude, entries 21-53 (channel 32=MCP-PMT);Sample number",64,-1.5,62.5);
 
   auto hNearC=new TH1F("histNearCh_coarse","Hits in channels 0-9, with firstSampleTime within 10 ns",1,0.,1.);
   auto hNearFine=new TH1F("histNearCh_fine","Hits in channels 0-9, with rising edge DC50Time within 20 ns",1,0.,1.);
-  auto hNearPMT=new TH1F("histNearPMT_fine","Hits in channels 0-9, with rising edge DC50Time within 700 ps of PMT-MCP channel 32",1,0.,1.);
+  auto hNearPMT=new TH1F("histNearPMT_fine","Hits in channels 0-9, with rising edge DC50Time within 800 ps of PMT-MCP channel 32",1,0.,1.);
   int64_t lastDC50[10]={0}; // latest picosec time (DC50 corrected) for channel 0-9
   std::vector<TH1F*> hBases,hAmpls,hDC50s,hCombos,hComboPMT;
   hBases.reserve(10);
@@ -45,8 +45,8 @@ void dataSampleReader()
    for (uint8_t ch2=0; ch2<10;ch2++)
     {
      std::string name="timeDiffPMT_ch32_"+std::to_string(ch2);
-     std::string title="Time difference of first sample reaching half amplitude (max 700ps),  PMT channel vs LGAD ch"+ std::to_string(ch2)+";Time difference (ps)";
-     hComboPMT.push_back(new TH1F(name.c_str(),title.c_str(),280,-700.,700.));
+     std::string title="Time difference of first sample reaching half (negative) amplitude (max 800ps),  PMT channel vs LGAD ch"+ std::to_string(ch2)+";Time difference (ps)";
+     hComboPMT.push_back(new TH1F(name.c_str(),title.c_str(),280,-800.,800.));
 
      }
   for (uint8_t ch=0; ch<10;ch++)
@@ -97,23 +97,23 @@ void dataSampleReader()
       waves pmt;
       pmt.coarseTime = picosec;
       hBase32->Fill(baseline);
-      float max=baseline;
-      int jmax=20;
+      float min=baseline;
+      int jmin=20;
       for (int j=21;j<54;j++)
-       if (max<samples[j])
+       if (min>samples[j])
         {
-         max=samples[j];
-         jmax=j;
+         min=samples[j];
+         jmin=j;
         }
-      float amplitude=max-baseline;
+      float amplitude=min-baseline;
       pmt.amplitude=amplitude;
       hAmpl32->Fill(amplitude);
-      pmt.maxbin=jmax;
+      pmt.maxbin=jmin;
       float dc50=amplitude*0.5;
       int j50=20;
-      while (j50<jmax)
+      while (j50<jmin)
        {
-        if (samples[j50]>baseline+dc50)
+        if (samples[j50]<baseline+dc50)
          break;
         j50++;
        }
@@ -172,7 +172,7 @@ void dataSampleReader()
       <<lastElement<<std::endl;
      }
    }
-  auto outFile=TFile::Open("amplitudes-run044-tenCh-v6.root","RECREATE");
+  auto outFile=TFile::Open("amplitudes-run044-11Ch-v7.root","RECREATE");
   hBase21->Write();
   hBase32->Write();
   hAmpl32->Write();
@@ -188,7 +188,7 @@ void dataSampleReader()
      {
       for (const auto& wave1: chWaves[ch])
        {
-        if (std::abs(wave1.timeAtDC50 - pmt.timeAtDC50) < 700)
+        if (std::abs(wave1.timeAtDC50 - pmt.timeAtDC50) < 800)
          {
           std::string labl=std::to_string(ch)+",32";
           hNearPMT->Fill(labl.c_str(),1.);
