@@ -32,7 +32,7 @@ void dataSampleReader()
 
   auto hNearC=new TH1F("histNearCh_coarse","Hits in channels 0-9, with firstSampleTime within 10 ns",1,0.,1.);
   auto hNearFine=new TH1F("histNearCh_fine","Hits in channels 0-9, with rising edge DC50Time within 20 ns",1,0.,1.);
-  auto hNearPMT=new TH1F("histNearPMT_fine","Hits in channels 0-9, with rising edge DC50Time within 800 ps of PMT-MCP channel 32",1,0.,1.);
+  auto hNearPMT=new TH1F("histNearPMT_fine","Hits in channels 0-9, with rising edge DC50Time within 1000 ps of PMT-MCP channel 32",1,0.,1.);
   int64_t lastDC50[10]={0}; // latest picosec time (DC50 corrected) for channel 0-9
   std::vector<TH1F*> hBases,hAmpls,hDC50s,hCombos,hComboPMT;
   hBases.reserve(10);
@@ -46,8 +46,8 @@ void dataSampleReader()
    for (uint8_t ch2=0; ch2<10;ch2++)
     {
      std::string name="timeDiffPMT_ch32_"+std::to_string(ch2);
-     std::string title="Time difference of first sample reaching half (negative) amplitude (max 800ps),  PMT channel vs LGAD ch"+ std::to_string(ch2)+";Time difference (ps)";
-     hComboPMT.push_back(new TH1F(name.c_str(),title.c_str(),280,-800.,800.));
+     std::string title="Time difference of first sample reaching half (negative) amplitude (max 1000ps),  PMT channel vs LGAD ch"+ std::to_string(ch2)+";Time difference (ps)";
+     hComboPMT.push_back(new TH1F(name.c_str(),title.c_str(),280,-400.,1000.));
 
      }
   for (uint8_t ch=0; ch<10;ch++)
@@ -199,7 +199,7 @@ void dataSampleReader()
       <<lastElement<<std::endl;
      }
    }
-  auto outFile=TFile::Open("amplitudes-run044-11Ch-v8.root","RECREATE");
+  auto outFile=TFile::Open("amplitudes-run044-11Ch-v9.root","RECREATE");
   hBase21->Write();
   hBase32->Write();
   hAmpl32->Write();
@@ -215,7 +215,7 @@ void dataSampleReader()
      {
       for (const auto& wave1: chWaves[ch])
        {
-        if (std::abs(wave1.timeAtDC50 - pmt.timeAtDC50) < 800)
+        if (std::abs(wave1.timeAtDC50 - pmt.timeAtDC50) < 1000)
          {
           std::string labl=std::to_string(ch)+",32";
           hNearPMT->Fill(labl.c_str(),1.);
