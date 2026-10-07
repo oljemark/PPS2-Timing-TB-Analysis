@@ -14,6 +14,7 @@ struct waves
   int64_t timeAtDC50{0}; // time at midpoint of rising edge, ps
   int maxbin{0}; // max amplitude bin, out of 64
   int binDC50{0}; // 1st half amplitude bin, out of 64
+  float finebinDC50{0.}; // interpolate half amplitude bin position, between binDC50 and binDC50-1
  };
 
 void dataSampleReader()
@@ -117,9 +118,22 @@ void dataSampleReader()
          break;
         j50++;
        }
+      float upper50=(samples[j50]-baseline)/amplitude;
+      float lower50=(samples[j50-1]-baseline)/amplitude;
+      if (amplitude < 0)
+       {
+        float subrange=upper50-lower50;
+        float downer=upper50 - 0.50;
+        float delta=downer/subrange;
+        pmt.finebinDC50=j50 - delta;
+       }
+      else
+      {
+       pmt.finebinDC50=j50+0.;
+      }
       pmt.binDC50=j50;
       hDC50_32->Fill(j50);
-      const int ps50=(j50 * 1000) / 6.4;
+      const int ps50=(pmt.finebinDC50 * 1000) / 6.4;
       const int64_t time50ps = picosec + ps50;
       pmt.timeAtDC50=time50ps;
       pmtWaves.push_back(pmt);
@@ -148,8 +162,21 @@ void dataSampleReader()
          break;
         j50++;
        }
+      float upper50=(samples[j50]-baseline)/amplitude;
+      float lower50=(samples[j50-1]-baseline)/amplitude;
+      if (amplitude > 0)
+       {
+        float subrange=upper50-lower50;
+        float downer=upper50 - 0.50;
+        float delta=downer/subrange;
+        wave.finebinDC50=j50 - delta;
+       }
+      else
+      {
+       wave.finebinDC50=j50+0.;
+      }
       wave.binDC50=j50;
-      const int ps50=(j50 * 1000) / 6.4;
+      const int ps50=(wave.finebinDC50 * 1000) / 6.4;
       const int64_t time50ps = picosec + ps50;
       wave.timeAtDC50=time50ps;
       chWaves[ch].push_back(wave);
@@ -172,7 +199,7 @@ void dataSampleReader()
       <<lastElement<<std::endl;
      }
    }
-  auto outFile=TFile::Open("amplitudes-run044-11Ch-v7.root","RECREATE");
+  auto outFile=TFile::Open("amplitudes-run044-11Ch-v8.root","RECREATE");
   hBase21->Write();
   hBase32->Write();
   hAmpl32->Write();
