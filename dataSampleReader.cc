@@ -11,7 +11,7 @@ struct waves
  {
   int64_t coarseTime{0}; // time to first sample, ps
   float amplitude{0.};
-  int64_t timeAtDC50{0}; // time at midpoint of rising edge, ps (tune to 70%)
+  int64_t timeAtDC50{0}; // time at midpoint of rising edge, ps (tune to 80%)
   int maxbin{0}; // max amplitude bin, out of 64
   int binDC50{0}; // 1st half amplitude bin, out of 64
   float finebinDC50{0.}; // interpolate half amplitude bin position, between binDC50 and binDC50-1
@@ -29,7 +29,7 @@ void dataSampleReader()
 
   auto hBase32=new TH1F("histBaselinePMT","Recalculated baseline, entries 1-20 (channel 32=MCP-PMT)",2000,-1.,1.);
   auto hAmpl32=new TH1F("histAmplitudePMT","Recalculated amplitude (negative), entries 21-53 (channel 32=MCP-PMT)",2000,-1.,1.);
-  auto hDC50_32=new TH1F("histDC70SamplePMT","First sample to reach 70 percent of amplitude, entries 21-53 (channel 32=MCP-PMT);Sample number",64,-1.5,62.5);
+  auto hDC50_32=new TH1F("histDC80SamplePMT","First sample to reach 80 percent of amplitude, entries 21-53 (channel 32=MCP-PMT);Sample number",64,-1.5,62.5);
 
   auto hNearC=new TH1F("histNearCh_coarse","Hits in channels 0-9, with firstSampleTime within 10 ns",1,0.,1.);
   auto hNearFine=new TH1F("histNearCh_fine","Hits in channels 0-9, with rising edge DC50Time within 5 ns",1,0.,1.);
@@ -47,7 +47,7 @@ void dataSampleReader()
    for (uint8_t ch2=0; ch2<10;ch2++)
     {
      std::string name="timeDiffPMT_ch32_"+std::to_string(ch2);
-     std::string title="Time difference of first sample reaching 70 pct of (negative) amplitude (max 1400ps),  PMT channel vs LGAD ch"+ std::to_string(ch2)+";Time difference (ps)";
+     std::string title="Time difference of first sample reaching 80 pct of (negative) amplitude (max 1400ps),  PMT channel vs LGAD ch"+ std::to_string(ch2)+";Time difference (ps)";
      hComboPMT.push_back(new TH1F(name.c_str(),title.c_str(),280,0.,1400.));
 
      }
@@ -62,19 +62,19 @@ void dataSampleReader()
     hAmpls.push_back(new TH1F(name.c_str(),title.c_str(),2000,-1.,1.));
 
     name="histDC50sample_ch"+ std::to_string(ch);
-    title="First sample reaching 70 percent of amplitude, entries 21-53, channel="+ std::to_string(ch)+";Sample number";
+    title="First sample reaching 80 percent of amplitude, entries 21-53, channel="+ std::to_string(ch)+";Sample number";
     hDC50s.push_back(new TH1F(name.c_str(),title.c_str(),64,-1.5,62.5));
 
     for (uint8_t ch2=0; ch2<10;ch2++)
      {
       name="timeDiff2_ch"+ std::to_string(ch)+"_"+std::to_string(ch2);
-      title="Time difference of first sample reaching 70 pct of amplitude (max 5ns),  channel="+ std::to_string(ch)
+      title="Time difference of first sample reaching 80 pct of amplitude (max 5ns),  channel="+ std::to_string(ch)
            +" vs "+ std::to_string(ch2)+";Time difference (ps)";
       hCombos.push_back(new TH1F(name.c_str(),title.c_str(),400,-5000.,5000.));
 
      }
    }
-  auto hPs50ch8=new TH1D("histPicosec70sample_ch8","First sample time in integer picoseconds reaching 70 pct of amplitude, entries 21-53 (channel==8);Time (ps)",200,0.,8e15);
+  auto hPs50ch8=new TH1D("histPicosec80sample_ch8","First sample time in integer picoseconds reaching 80 pct of amplitude, entries 21-53 (channel==8);Time (ps)",200,0.,8e15);
   std::uint64_t numEntries = reader->GetNEntries();
 
   //event loop
@@ -83,7 +83,7 @@ void dataSampleReader()
     // viewArr(i) returns a const reference to the std::array<float, 64> at entry i
     const std::array<float, 64>& samples = viewArr(i);
     const uint8_t ch=viewCh(i);
-    const float thr=0.7;
+    const float thr=0.8;
     const int64_t picosec=viewTSPSint(i); // first sample time, rounded to nearest ps
 
     // Process elements inside the fixed-length vector
@@ -208,7 +208,7 @@ void dataSampleReader()
       if (ch == 8)
        hPs50ch8->Fill(time50ps);
       if (!(i%100))
-       std::cout<<"time at 70 pct amplitude(ps):"<<time50ps<<"ps j50:"<<j50<<" ch:"<<std::to_string(ch)<<std::endl;
+       std::cout<<"time at 80 pct amplitude(ps):"<<time50ps<<"ps j50:"<<j50<<" ch:"<<std::to_string(ch)<<std::endl;
       hAmpls[ch]->Fill(amplitude);
      }
     if (!(i%10000))
@@ -217,7 +217,7 @@ void dataSampleReader()
       <<lastElement<<std::endl;
      }
    }
-  auto outFile=TFile::Open("amplitudes-run044-70pct-v11.root","RECREATE");
+  auto outFile=TFile::Open("amplitudes-run044-80pct-v11.root","RECREATE");
   hBase21->Write();
   hBase32->Write();
   hAmpl32->Write();
