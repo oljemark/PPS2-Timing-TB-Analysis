@@ -62,11 +62,11 @@ void dataSampleReader()
      std::string title="Time difference of first sample reaching 40 pct of (negative) amplitude (max 1400ps),  PMT channel vs LGAD ch"+ std::to_string(ch2)+";Time difference (ps)";
      if (ch2==8)
       {
-       hComboPMT.push_back(new TH1F(name.c_str(),title.c_str(),160,-40000.,40000.));
+       hComboPMT.push_back(new TH1F(name.c_str(),title.c_str(),1600,-4000.,4000.));
       }
      else
      {
-      hComboPMT.push_back(new TH1F(name.c_str(),title.c_str(),280,0.,1400.));
+      hComboPMT.push_back(new TH1F(name.c_str(),title.c_str(),320,-200.,1400.));
      }
 
      }
@@ -192,7 +192,7 @@ void dataSampleReader()
       const int pole=((-MAmplitude > amplitude) ? -ch : ch);
       hPolar->Fill(pole);
 
-      if ((neg8<100)&&(MAmplitude<0)&&(ch==8))
+      if ((neg8<100)&&(MAmplitude<-0.01)&&(ch==8))
       {
        for (int j=1;j<54;j++)
          hWavef8min[neg8]->SetBinContent(j+1,1000.*(samples[j]-baseline));
@@ -252,7 +252,7 @@ void dataSampleReader()
       <<lastElement<<std::endl;
      }
    }
-  auto outFile=TFile::Open("amplitudes-run044-40pct-v14.root","RECREATE");
+  auto outFile=TFile::Open("amplitudes-run044-40pct-v15.root","RECREATE");
   hBase21->Write();
   hBase32->Write();
   hAmpl32->Write();
@@ -273,7 +273,7 @@ void dataSampleReader()
      {
       for (const auto& wave1: chWaves[ch])
        {
-        if (std::abs(wave1.timeAtDC50 - pmt.timeAtDC50) < (ch==8 ? 40000 : 1400))
+        if (std::abs(wave1.timeAtDC50 - pmt.timeAtDC50) < (ch==8 ? 4000 : 1400))
          {
           std::string labl=std::to_string(ch)+",32";
           hNearPMT->Fill(labl.c_str(),1.);
