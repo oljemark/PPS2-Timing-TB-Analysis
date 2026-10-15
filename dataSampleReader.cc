@@ -59,7 +59,7 @@ void dataSampleReader()
 
    for (uint8_t ch2=0; ch2<10;ch2++)
     {
-     const std::string amplis[10]={"5-10mV","10-15mV","15-20mV","20-25mV","25-30mV","30-35mV","35-40mV","40-45mV","45-50mV","50-55mV"};
+     const std::string amplis[11]={"2-5mV","5-10mV","10-15mV","15-20mV","20-25mV","25-30mV","30-35mV","35-45mV","45-60mV","60-80mV","80-150mV"};
      std::string name="timeDiffPMT_ch32_"+std::to_string(ch2);
      std::string title="Time difference of first sample reaching 40 pct of (negative) amplitude (max 1400ps),  PMT channel vs LGAD ch"+ std::to_string(ch2)+";Time difference (ps)";
      if (ch2==8)
@@ -70,11 +70,11 @@ void dataSampleReader()
      {
       hComboPMT.push_back(new TH1F(name.c_str(),title.c_str(),320,-200.,1400.));
      }
-    for (uint8_t amp=0; amp<10;amp++)
+    for (uint8_t amp=0; amp<11;amp++)
      {
       name="timeDiffPMT_ch32_"+std::to_string(ch2)+"_"+amplis[amp];
       title="Time difference of first sample reaching 40 pct of amplitude (max 1400ps),  PMT channel vs LGAD ch"+ std::to_string(ch2)+", max amplitude in range "+amplis[amp]+";Time difference (ps)";
-      hWalkComboPMT.push_back(new TH1F(name.c_str(),title.c_str(),320,-200.,1400.));
+      hWalkComboPMT.push_back(new TH1F(name.c_str(),title.c_str(),80,-200.,1400.));
      }
 
      }
@@ -260,7 +260,7 @@ void dataSampleReader()
       <<lastElement<<std::endl;
      }
    }
-  auto outFile=TFile::Open("timeWalks-run044-40pct-v1.root","RECREATE");
+  auto outFile=TFile::Open("timeWalks-run044-40pct-v2.root","RECREATE");
   hBase21->Write();
   hBase32->Write();
   hAmpl32->Write();
@@ -287,19 +287,47 @@ void dataSampleReader()
           hNearPMT->Fill(labl.c_str(),1.);
           hComboPMT[ch]->Fill(wave1.timeAtDC50 - pmt.timeAtDC50);
           const auto mV=1000.*wave1.amplitude;
-          if ((mV>5.)&&(mV<55.))
+          if ((mV>2.)&&(mV<150.))
            {
-            const uint8_t amp=(mV - 5.)/5;
-            hWalkComboPMT[10*ch+amp]->Fill(wave1.timeAtDC50 - pmt.timeAtDC50);
+            uint8_t amp=0;
+            if (mV<5.)
+             amp=0;
+            else
+             {
+              if (mV<35.)
+               amp=1+(mV - 5.)/5;
+              else
+               {
+                if (mV<45.)
+                 amp=7;
+                else
+                 {
+                  if (mV<60.)
+                   amp=8;
+                  else
+                   {
+                    if (mV<80.)
+                     amp=9;
+                    else
+                     {
+                      if (mV<150.)
+                       amp=10;
+                     }
+                  }
+               }
+             }
+           }
+            hWalkComboPMT[11*ch+amp]->Fill(wave1.timeAtDC50 - pmt.timeAtDC50);
            }
          }
        }
      }
     hComboPMT[ch]->Write();
+    for (uint8_t amp=0; amp<11;amp++)
+      hWalkComboPMT[ch*11+amp]->Write();
 
     for (uint8_t ch2=0; ch2<10;ch2++)
      {
-      hWalkComboPMT[ch*10+ch2]->Write();
       if (ch2==ch) continue;
       for (const auto& wave1: chWaves[ch])
        {
