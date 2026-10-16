@@ -44,17 +44,17 @@ void dataSampleReader()
   hComboPMT.reserve(10);
   hWalkComboPMT.reserve(100);
   hCombos.reserve(100);
-  hWavef8max.reserve(100);
-  hWavef8min.reserve(100);
+  hWavef8max.reserve(900);
+  hWavef8min.reserve(900);
   std::vector<waves> chWaves[10];
   std::vector<waves> pmtWaves;
-  for (uint8_t ch=0; ch<100;ch++)
+  for (uint16_t ch=0; ch<900;ch++)
   {
-     std::string name="waveform_ch8_neg_"+std::to_string(ch);
-     std::string title="Negative amplitude example waveform in channel 8;Sample number;Amplitude below baseline (mV)";
+     std::string name="waveform_chNon8_neg_"+std::to_string(ch);
+     std::string title="Negative amplitude example waveform in channels 0-7,9;Sample number;Amplitude below baseline (mV)";
      hWavef8min.push_back(new TH1F(name.c_str(),title.c_str(),65,-0.5,64.5));
      name="waveform_ch8_pos_"+std::to_string(ch);
-     title="Positive amplitude example waveform in channel 8;Sample number;Amplitude above baseline (mV)";
+     title="Positive amplitude example waveform in channels 0-9, excluding 8;Sample number;Amplitude above baseline (mV)";
      hWavef8max.push_back(new TH1F(name.c_str(),title.c_str(),65,-0.5,64.5));
   }
 
@@ -206,13 +206,13 @@ void dataSampleReader()
       const int pole=((-MAmplitude > amplitude) ? -ch : ch);
       hPolar->Fill(pole);
 
-      if ((neg8<100)&&(MAmplitude<-0.01)&&(ch==8))
+      if ((neg8<900)&&(MAmplitude<-0.01)&&(ch!=8))
       {
        for (int j=1;j<54;j++)
          hWavef8min[neg8]->SetBinContent(j+1,1000.*(samples[j]-baseline));
        neg8++;
       }
-      if ((pos8<100)&&(amplitude>0)&&(ch==8))
+      if ((pos8<900)&&(amplitude>0)&&(ch!=8))
       {
        for (int j=1;j<54;j++)
          hWavef8max[pos8]->SetBinContent(j+1,1000.*(samples[j]-baseline));
@@ -273,7 +273,7 @@ void dataSampleReader()
   hAmpl32->Write();
   hDC50_32->Write();
   std::cout<<"MCP-PMT triggers:"<<pmtWaves.size()<<std::endl;
-  for (uint8_t ch8=0; ch8<100;ch8++)
+  for (uint16_t ch8=0; ch8<900;ch8++)
   {
    hWavef8max[ch8]->Write();
    hWavef8min[ch8]->Write();
