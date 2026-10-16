@@ -35,10 +35,11 @@ void dataSampleReader()
   auto hNearFine=new TH1F("histNearCh_fine","Hits in channels 0-9, with rising edge DC50Time within 5 ns",1,0.,1.);
   auto hNearPMT=new TH1F("histNearPMT_fine","Hits in channels 0-9, with rising edge DC50Time within 1400 ps of PMT-MCP channel 32",1,0.,1.);
   int64_t lastDC50[10]={0}; // latest picosec time (DC50 corrected) for channel 0-9
-  std::vector<TH1F*> hBases,hAmpls,hDC50s,hCombos,hComboPMT,hWalkComboPMT;
+  std::vector<TH1F*> hBases,hAmpls,hAmp2,hDC50s,hCombos,hComboPMT,hWalkComboPMT;
   std::vector<TH1F*> hWavef8max,hWavef8min;
   hBases.reserve(10);
   hAmpls.reserve(10);
+  hAmp2.reserve(10);
   hDC50s.reserve(10);
   hComboPMT.reserve(10);
   hWalkComboPMT.reserve(100);
@@ -80,6 +81,8 @@ void dataSampleReader()
      }
   for (uint8_t ch=0; ch<10;ch++)
    {
+    const float binEdges[12]={2,5,10,15,20,25,30,35,45,60,80,150};
+
     std::string name="histBaseline_ch" + std::to_string(ch);
     std::string title="Recalculated baseline, entries 1-20, channel=" + std::to_string(ch);
     hBases.push_back(new TH1F(name.c_str(),title.c_str(),2000,-1.,1.));
@@ -87,6 +90,9 @@ void dataSampleReader()
     name="histAmplitude21to53_ch"+ std::to_string(ch);
     title="Recalculated amplitude, entries 21-53, channel="+ std::to_string(ch);
     hAmpls.push_back(new TH1F(name.c_str(),title.c_str(),2000,-1.,1.));
+    name=name+"varBinning";
+    title="Recalculated amplitude (mV), entries 21-53, channel="+ std::to_string(ch)+";Amplitude (mV)";
+    hAmp2.push_back(new TH1F(name.c_str(),title.c_str(),11,binEdges));
 
     name="histDC40sample_ch"+ std::to_string(ch);
     title="First sample reaching 40 percent of amplitude, entries 21-53, channel="+ std::to_string(ch)+";Sample number";
@@ -253,6 +259,7 @@ void dataSampleReader()
       if (!(i%100))
        std::cout<<"time at 40 pct amplitude(ps):"<<time50ps<<"ps j50:"<<j50<<" ch:"<<std::to_string(ch)<<std::endl;
       hAmpls[ch]->Fill(amplitude);
+      hAmp2[ch]->Fill(1000.*amplitude);
      }
     if (!(i%10000))
      {
@@ -260,7 +267,7 @@ void dataSampleReader()
       <<lastElement<<std::endl;
      }
    }
-  auto outFile=TFile::Open("timeWalks-run044-40pct-v2.root","RECREATE");
+  auto outFile=TFile::Open("timeWalks-run044-40pct-v3.root","RECREATE");
   hBase21->Write();
   hBase32->Write();
   hAmpl32->Write();
@@ -276,6 +283,7 @@ void dataSampleReader()
     std::cout<<chWaves[ch].size()<<std::endl;
     hBases[ch]->Write();
     hAmpls[ch]->Write();
+    hAmp2[ch]->Write();
     hDC50s[ch]->Write();
     for (const auto& pmt: pmtWaves)
      {
