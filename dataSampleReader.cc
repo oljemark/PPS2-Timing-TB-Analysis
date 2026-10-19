@@ -28,6 +28,7 @@ void dataSampleReader()
   auto hPolar=new TH1F("histPolarity","Recalculated amplitude per SAMPIC channel (negative numbers are channels with amplitude < 0);SAMPIC channel",65,-32.5,32.5);
 
   auto hBase32=new TH1F("histBaselinePMT","Recalculated baseline, entries 1-20 (channel 32=MCP-PMT)",2000,-1.,1.);
+  auto hBaseRms32=new TH1F("histBaselineRmsPMT","Recalculated baseline rms, entries 1-20 (channel 32=MCP-PMT);Baseline rms (mV)",2000,1.,-1.);
   auto hAmpl32=new TH1F("histAmplitudePMT","Recalculated amplitude (negative), entries 21-53 (channel 32=MCP-PMT)",2000,-1.,1.);
   auto hDC50_32=new TH1F("histDC40SamplePMT","First sample to reach 40 percent of amplitude, entries 21-53 (channel 32=MCP-PMT);Sample number",64,-1.5,62.5);
 
@@ -35,10 +36,12 @@ void dataSampleReader()
   auto hNearFine=new TH1F("histNearCh_fine","Hits in channels 0-9, with rising edge DC50Time within 5 ns",1,0.,1.);
   auto hNearPMT=new TH1F("histNearPMT_fine","Hits in channels 0-9, with rising edge DC50Time within 1400 ps of PMT-MCP channel 32",1,0.,1.);
   int64_t lastDC50[10]={0}; // latest picosec time (DC50 corrected) for channel 0-9
-  std::vector<TH1F*> hBases,hAmpls,hAmp2,hDC50s,hCombos,hComboPMT,hWalkComboPMT;
+  std::vector<TH1F*> hBases,hBaseRms,hAmpls,hAmp2,hDC50s,hCombos,hComboPMT,hWalkComboPMT,hBipole;
   std::vector<TH1F*> hWavef8max,hWavef8min;
   hBases.reserve(10);
+  hBaseRms.reserve(10);
   hAmpls.reserve(10);
+  hBipole.reserve(11);
   hAmp2.reserve(10);
   hDC50s.reserve(10);
   hComboPMT.reserve(10);
@@ -57,6 +60,16 @@ void dataSampleReader()
      title="Positive amplitude example waveform in channels 0-9, excluding 8;Sample number;Amplitude above baseline (mV)";
      hWavef8max.push_back(new TH1F(name.c_str(),title.c_str(),65,-0.5,64.5));
   }
+   for (uint8_t ch=0; ch<11;ch++)
+    {
+     std::string name="smallerPolarityAmplitude_"+std::to_string(ch);
+     if (ch==10)
+      name="smallerPolarityAmplitude_32";
+     std::string title="Smaller of amplitude above or below baseline for LGAD ch"+ std::to_string(ch)+";Smaller amplitude (mV)";
+     if (ch==10)
+      title="Smaller of amplitude above or below baseline for PMT ch 32;Smaller amplitude (mV)";
+     hBipole.push_back(new TH1F(name.c_str(),title.c_str(),500,1.,-1.));
+    }
 
    for (uint8_t ch2=0; ch2<10;ch2++)
     {
@@ -86,6 +99,10 @@ void dataSampleReader()
     std::string name="histBaseline_ch" + std::to_string(ch);
     std::string title="Recalculated baseline, entries 1-20, channel=" + std::to_string(ch);
     hBases.push_back(new TH1F(name.c_str(),title.c_str(),2000,-1.,1.));
+
+    name="histBaselineVar_ch" + std::to_string(ch);
+    title="RMS of recalculated baseline, entries 1-20, channel=" + std::to_string(ch)+";Baseline standard deviation (mV)";
+    hBaseRms.push_back(new TH1F(name.c_str(),title.c_str(),2000,1.,-1.));
 
     name="histAmplitude21to53_ch"+ std::to_string(ch);
     title="Recalculated amplitude, entries 21-53, channel="+ std::to_string(ch);
@@ -130,11 +147,18 @@ void dataSampleReader()
      baseline+=samples[j];
     baseline=baseline/20.;
     hBase21->Fill(baseline);
+    float var=0.;
+    for (int j=2;j<21;j++)
+     var+=(samples[j]-baseline)*(samples[j]-baseline);
+    var=var/20.;
+    const float rms=std::sqrt(var);
+
     if (ch==32)
      {
       waves pmt;
       pmt.coarseTime = picosec;
       hBase32->Fill(baseline);
+      hBaseRms32->Fill(1000.*rms);
       float min=baseline;
       float max=baseline;
       int jmin=20;
@@ -152,6 +176,8 @@ void dataSampleReader()
       float PAmplitude=max-baseline;
       const int pole=((PAmplitude > -amplitude) ? 32 : -32);
       hPolar->Fill(pole);
+      const float lesser = (pole<0 ? PAmplitude : -amplitude);
+      hBipole[10]->Fill(1000.*lesser);
       pmt.amplitude=amplitude;
       hAmpl32->Fill(amplitude);
       pmt.maxbin=jmin;
@@ -188,6 +214,7 @@ void dataSampleReader()
       waves wave;
       wave.coarseTime = picosec;
       hBases[ch]->Fill(baseline);
+      hBaseRms[ch]->Fill(1000.*rms);
       float max=baseline;
       float min=baseline;
       int jmax=20;
@@ -205,6 +232,8 @@ void dataSampleReader()
       float MAmplitude=min-baseline;
       const int pole=((-MAmplitude > amplitude) ? -ch : ch);
       hPolar->Fill(pole);
+      const float lesser = (pole>0 ? -MAmplitude : amplitude);
+      hBipole[ch]->Fill(1000.*lesser);
 
       if ((neg8<900)&&(MAmplitude<-0.01)&&(ch!=8))
       {
@@ -267,12 +296,15 @@ void dataSampleReader()
       <<lastElement<<std::endl;
      }
    }
-  auto outFile=TFile::Open("timeWalks-run044-40pct-v3.root","RECREATE");
+  auto outFile=TFile::Open("timeWalks-run044-40pct-v4.root","RECREATE");
   hBase21->Write();
   hBase32->Write();
+  hBaseRms32->Write();
   hAmpl32->Write();
   hDC50_32->Write();
   std::cout<<"MCP-PMT triggers:"<<pmtWaves.size()<<std::endl;
+  for (uint16_t ch=0; ch<11;ch++)
+   hBipole[ch]->Write();
   for (uint16_t ch8=0; ch8<900;ch8++)
   {
    hWavef8max[ch8]->Write();
@@ -282,6 +314,7 @@ void dataSampleReader()
    {
     std::cout<<chWaves[ch].size()<<std::endl;
     hBases[ch]->Write();
+    hBaseRms[ch]->Write();
     hAmpls[ch]->Write();
     hAmp2[ch]->Write();
     hDC50s[ch]->Write();
