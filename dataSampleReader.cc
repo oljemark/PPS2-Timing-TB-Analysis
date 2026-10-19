@@ -47,14 +47,18 @@ void dataSampleReader()
   hComboPMT.reserve(10);
   hWalkComboPMT.reserve(100);
   hCombos.reserve(100);
-  hWavef8max.reserve(900);
-  hWavef8min.reserve(900);
+  hWavef8max.reserve(200);
+  hWavef8min.reserve(200);
   std::vector<waves> chWaves[10];
   std::vector<waves> pmtWaves;
-  for (uint16_t ch=0; ch<900;ch++)
+  std::map<uint8_t,int> noisyBase;
+  noisyBase[32]=0;
+  for (uint8_t ch=0;ch<10;ch++)
+   noisyBase[ch]=0;
+  for (uint16_t ch=0; ch<200;ch++)
   {
      std::string name="waveform_chNon8_neg_"+std::to_string(ch);
-     std::string title="Negative amplitude example waveform in channels 0-7,9;Sample number;Amplitude below baseline (mV)";
+     std::string title="Baseline high rms (>2 mV) example waveform in channels 0-7,9;Sample number;Amplitude above baseline (mV)";
      hWavef8min.push_back(new TH1F(name.c_str(),title.c_str(),65,-0.5,64.5));
      name="waveform_ch8_pos_"+std::to_string(ch);
      title="Positive amplitude example waveform in channels 0-9, excluding 8;Sample number;Amplitude above baseline (mV)";
@@ -152,6 +156,8 @@ void dataSampleReader()
      var+=(samples[j]-baseline)*(samples[j]-baseline);
     var=var/20.;
     const float rms=std::sqrt(var);
+    if (1000.*rms>2.)
+     noisyBase[ch]++;
 
     if (ch==32)
      {
@@ -235,13 +241,13 @@ void dataSampleReader()
       const float lesser = (pole>0 ? -MAmplitude : amplitude);
       hBipole[ch]->Fill(1000.*lesser);
 
-      if ((neg8<900)&&(MAmplitude<-0.01)&&(ch!=8))
+      if ((neg8<200)&&(rms*1000.>2.)&&(ch!=8))
       {
        for (int j=1;j<54;j++)
          hWavef8min[neg8]->SetBinContent(j+1,1000.*(samples[j]-baseline));
        neg8++;
       }
-      if ((pos8<900)&&(amplitude>0)&&(ch!=8))
+      if ((pos8<200)&&(amplitude>0)&&(ch!=8))
       {
        for (int j=1;j<54;j++)
          hWavef8max[pos8]->SetBinContent(j+1,1000.*(samples[j]-baseline));
@@ -296,7 +302,9 @@ void dataSampleReader()
       <<lastElement<<std::endl;
      }
    }
-  auto outFile=TFile::Open("timeWalks-run044-40pct-v4.root","RECREATE");
+  for (const auto& [cha, entries] : noisyBase)
+   std::cout<<"Channel "+std::to_string(cha)+", entries:"<<entries<<std::endl;
+  auto outFile=TFile::Open("timeWalks-run044-40pct-v5.root","RECREATE");
   hBase21->Write();
   hBase32->Write();
   hBaseRms32->Write();
@@ -305,7 +313,7 @@ void dataSampleReader()
   std::cout<<"MCP-PMT triggers:"<<pmtWaves.size()<<std::endl;
   for (uint16_t ch=0; ch<11;ch++)
    hBipole[ch]->Write();
-  for (uint16_t ch8=0; ch8<900;ch8++)
+  for (uint16_t ch8=0; ch8<200;ch8++)
   {
    hWavef8max[ch8]->Write();
    hWavef8min[ch8]->Write();
