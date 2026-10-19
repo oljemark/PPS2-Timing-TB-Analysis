@@ -152,7 +152,7 @@ void dataSampleReader()
     baseline=baseline/20.;
     hBase21->Fill(baseline);
     float var=0.;
-    for (int j=2;j<21;j++)
+    for (int j=1;j<21;j++)
      var+=(samples[j]-baseline)*(samples[j]-baseline);
     var=var/20.;
     const float rms=std::sqrt(var);
@@ -304,7 +304,7 @@ void dataSampleReader()
    }
   for (const auto& [cha, entries] : noisyBase)
    std::cout<<"Channel "+std::to_string(cha)+", entries:"<<entries<<std::endl;
-  auto outFile=TFile::Open("timeWalks-run044-40pct-v5.root","RECREATE");
+  auto outFile=TFile::Open("timeWalks-run044-40pct-v6.root","RECREATE");
   hBase21->Write();
   hBase32->Write();
   hBaseRms32->Write();
