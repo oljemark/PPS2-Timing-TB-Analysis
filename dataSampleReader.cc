@@ -64,7 +64,7 @@ void dataSampleReader()
   noiseThr[7]=1.81;
   noiseThr[8]=1.73;
   noiseThr[9]=1.83;
-  noiseThr[32]=1.65;
+  noiseThr[32]=3.43; // fitted gaussian in the tail above 1.65 (6 sigma from central peak)
 
   noisyBase[32]=0;
   for (uint8_t ch=0;ch<10;ch++)
@@ -368,7 +368,7 @@ void dataSampleReader()
    }
   for (const auto& [cha, entries] : noisyBase)
    std::cout<<"Channel "+std::to_string(cha)+", entries:"<<entries<<std::endl;
-  auto outFile=TFile::Open("timeWalks-run044-40pct-v7.root","RECREATE");
+  auto outFile=TFile::Open("timeWalks-run044-40pct-v8.root","RECREATE");
   hBase21->Write();
   hBase32->Write();
   hBaseRms32->Write();
