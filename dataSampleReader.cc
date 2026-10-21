@@ -28,7 +28,7 @@ void dataSampleReader()
   auto hPolar=new TH1F("histPolarity","Recalculated amplitude per SAMPIC channel (negative numbers are channels with amplitude < 0);SAMPIC channel",65,-32.5,32.5);
 
   auto hBase32=new TH1F("histBaselinePMT","Recalculated baseline, entries 1-20 (channel 32=MCP-PMT)",2000,-1.,1.);
-  auto hBaseRms32=new TH1F("histBaselineRmsPMT","Recalculated baseline rms, entries 1-20 (channel 32=MCP-PMT);Baseline rms (mV)",2000,1.,-1.);
+  auto hBaseRms32=new TH1F("histBaselineRmsPMTTail6sig","Recalculated baseline rms, entries 1-20 (channel 32=MCP-PMT);Baseline rms above 6-sigma cut (mV)",2000,1.,-1.);
   auto hAmpl32=new TH1F("histAmplitudePMT","Recalculated amplitude (negative), entries 21-53 (channel 32=MCP-PMT)",2000,-1.,1.);
   auto hDC50_32=new TH1F("histDC40SamplePMT","First sample to reach 40 percent of amplitude, entries 21-53 (channel 32=MCP-PMT);Sample number",64,-1.5,62.5);
 
@@ -36,11 +36,12 @@ void dataSampleReader()
   auto hNearFine=new TH1F("histNearCh_fine","Hits in channels 0-9, with rising edge DC50Time within 5 ns",1,0.,1.);
   auto hNearPMT=new TH1F("histNearPMT_fine","Hits in channels 0-9, with rising edge DC50Time within 1400 ps of PMT-MCP channel 32",1,0.,1.);
   int64_t lastDC50[10]={0}; // latest picosec time (DC50 corrected) for channel 0-9
-  std::vector<TH1F*> hBases,hBaseRms,hAmpls,hAmp2,hDC50s,hCombos,hComboPMT,hWalkComboPMT,hBipole;
+  std::vector<TH1F*> hBases,hBaseRms,hAmpls,hAmp2,hDC50s,hCombos,hComboPMT,hWalkComboPMT,hBipole,hPosPeaks;
   std::vector<TH1F*> hWavef8max,hWavef8min;
   hBases.reserve(10);
   hBaseRms.reserve(10);
   hAmpls.reserve(10);
+  hPosPeaks.reserve(10);
   hBipole.reserve(11);
   hAmp2.reserve(10);
   hDC50s.reserve(10);
@@ -52,16 +53,29 @@ void dataSampleReader()
   std::vector<waves> chWaves[10];
   std::vector<waves> pmtWaves;
   std::map<uint8_t,int> noisyBase;
+  std::map<uint8_t,float> noiseThr;
+  noiseThr[0]=1.97;
+  noiseThr[1]=2.01;
+  noiseThr[2]=1.99;
+  noiseThr[3]=1.86;
+  noiseThr[4]=2.06;
+  noiseThr[5]=1.97;
+  noiseThr[6]=1.95;
+  noiseThr[7]=1.81;
+  noiseThr[8]=1.73;
+  noiseThr[9]=1.83;
+  noiseThr[32]=1.65;
+
   noisyBase[32]=0;
   for (uint8_t ch=0;ch<10;ch++)
    noisyBase[ch]=0;
   for (uint16_t ch=0; ch<200;ch++)
   {
-     std::string name="waveform_chNon8_neg_"+std::to_string(ch);
-     std::string title="Baseline high rms (>2 mV) example waveform in channels 0-7,9;Sample number;Amplitude above baseline (mV)";
+     std::string name="waveform_ch_neg_"+std::to_string(ch);
+     std::string title="Baseline high rms (>2 mV) example waveform in channels 0-9;Sample number;Amplitude above baseline (mV)";
      hWavef8min.push_back(new TH1F(name.c_str(),title.c_str(),65,-0.5,64.5));
-     name="waveform_ch8_pos_"+std::to_string(ch);
-     title="Positive amplitude example waveform in channels 0-9, excluding 8;Sample number;Amplitude above baseline (mV)";
+     name="waveform_ch_pos_"+std::to_string(ch);
+     title="Positive amplitude above baseline RMS noise threshold (6 sigma), example waveform in channels 0-9;Sample number;Amplitude above baseline (mV)";
      hWavef8max.push_back(new TH1F(name.c_str(),title.c_str(),65,-0.5,64.5));
   }
    for (uint8_t ch=0; ch<11;ch++)
@@ -103,6 +117,10 @@ void dataSampleReader()
     std::string name="histBaseline_ch" + std::to_string(ch);
     std::string title="Recalculated baseline, entries 1-20, channel=" + std::to_string(ch);
     hBases.push_back(new TH1F(name.c_str(),title.c_str(),2000,-1.,1.));
+
+    name="histPosPeaks_ch" + std::to_string(ch);
+    title="Count of full positive peaks (rising+max+falling edges), channel=" + std::to_string(ch);
+    hPosPeaks.push_back(new TH1F(name.c_str(),title.c_str(),40,-0.5,39.5));
 
     name="histBaselineVar_ch" + std::to_string(ch);
     title="RMS of recalculated baseline, entries 1-20, channel=" + std::to_string(ch)+";Baseline standard deviation (mV)";
@@ -156,7 +174,7 @@ void dataSampleReader()
      var+=(samples[j]-baseline)*(samples[j]-baseline);
     var=var/20.;
     const float rms=std::sqrt(var);
-    if (1000.*rms>2.)
+    if (1000.*rms>noiseThr[ch])
      noisyBase[ch]++;
 
     if (ch==32)
@@ -164,7 +182,8 @@ void dataSampleReader()
       waves pmt;
       pmt.coarseTime = picosec;
       hBase32->Fill(baseline);
-      hBaseRms32->Fill(1000.*rms);
+      if (1000.*rms > noiseThr[32])
+       hBaseRms32->Fill(1000.*rms);
       float min=baseline;
       float max=baseline;
       int jmin=20;
@@ -223,6 +242,12 @@ void dataSampleReader()
       hBaseRms[ch]->Fill(1000.*rms);
       float max=baseline;
       float min=baseline;
+      int rising[64]={0};
+      int falling[64]={0};
+      int locmin[64]={0};
+      int locmax[64]={0};
+      int posPeaks=0;
+      enum states {kNA,kRise,kFall,kMin,kMax};
       int jmax=20;
       for (int j=21;j<54;j++)
        {
@@ -241,13 +266,52 @@ void dataSampleReader()
       const float lesser = (pole>0 ? -MAmplitude : amplitude);
       hBipole[ch]->Fill(1000.*lesser);
 
-      if ((neg8<200)&&(rms*1000.>2.)&&(ch!=8))
+      for (int j=21;j<54;j++)
+       {
+        float ldiff1=samples[j-2]-samples[j-1];
+        float ldiff2=samples[j-1]-samples[j];
+        float rdiff1=samples[j+2]-samples[j+1];
+        float rdiff2=samples[j+1]-samples[j];
+        float meanleft=(ldiff1+ldiff2)/2.;
+        float meanright=(rdiff1+rdiff2)/2.;
+        if ((meanleft<0)&&(meanright>0))
+         rising[j]=1;
+        else
+         rising[j]=2;
+        if ((meanleft>0)&&(meanright<0))
+         falling[j]=1;
+        else
+         falling[j]=2;
+        if ((meanleft>0)&&(meanright>0))
+         locmin[j]=1;
+        else
+         locmin[j]=2;
+        if ((meanleft<0)&&(meanright<0))
+         locmax[j]=1;
+        else
+         locmax[j]=2;
+       }
+      states st=kNA;
+      for (int j=21;j<54;j++)
+       {
+        if (rising[j]==1)
+         st=kRise;
+        if ((locmax[j]==1)&&(st==kRise))
+         st=kMax;
+        if ((falling[j]==1)&&(st==kMax))
+         {
+          st=kFall;
+	  posPeaks++;
+         }
+       }
+      hPosPeaks[ch]->Fill(posPeaks+0.);
+      if ((neg8<200)&&(rms*1000.>noiseThr[ch]))
       {
        for (int j=1;j<54;j++)
          hWavef8min[neg8]->SetBinContent(j+1,1000.*(samples[j]-baseline));
        neg8++;
       }
-      if ((pos8<200)&&(amplitude>0)&&(ch!=8))
+      if ((pos8<200)&&(amplitude*1000.>noiseThr[ch]))
       {
        for (int j=1;j<54;j++)
          hWavef8max[pos8]->SetBinContent(j+1,1000.*(samples[j]-baseline));
@@ -304,7 +368,7 @@ void dataSampleReader()
    }
   for (const auto& [cha, entries] : noisyBase)
    std::cout<<"Channel "+std::to_string(cha)+", entries:"<<entries<<std::endl;
-  auto outFile=TFile::Open("timeWalks-run044-40pct-v6.root","RECREATE");
+  auto outFile=TFile::Open("timeWalks-run044-40pct-v7.root","RECREATE");
   hBase21->Write();
   hBase32->Write();
   hBaseRms32->Write();
@@ -322,6 +386,7 @@ void dataSampleReader()
    {
     std::cout<<chWaves[ch].size()<<std::endl;
     hBases[ch]->Write();
+    hPosPeaks[ch]->Write();
     hBaseRms[ch]->Write();
     hAmpls[ch]->Write();
     hAmp2[ch]->Write();
