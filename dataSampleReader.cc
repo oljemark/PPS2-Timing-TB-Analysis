@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <algorithm>
 
 struct waves
  {
@@ -38,6 +39,9 @@ void dataSampleReader()
   int64_t lastDC50[10]={0}; // latest picosec time (DC50 corrected) for channel 0-9
   std::vector<TH1F*> hBases,hBaseRms,hAmpls,hAmp2,hDC50s,hCombos,hComboPMT,hWalkComboPMT,hBipole,hPosPeaks;
   std::vector<TH1F*> hWavef8max,hWavef8min;
+  std::vector<TH1F*> hBigAmp,h2ndAmp;
+  hBigAmp.reserve(10);
+  h2ndAmp.reserve(10);
   hBases.reserve(10);
   hBaseRms.reserve(10);
   hAmpls.reserve(10);
@@ -125,6 +129,14 @@ void dataSampleReader()
     name="histBaselineVar_ch" + std::to_string(ch);
     title="RMS of recalculated baseline, entries 1-20, channel=" + std::to_string(ch)+";Baseline standard deviation (mV)";
     hBaseRms.push_back(new TH1F(name.c_str(),title.c_str(),2000,1.,-1.));
+
+    name="histBiggestPeakAmp_ch" + std::to_string(ch);
+    title="Biggest peak amplitude above recalculated baseline, entries 1-20, channel=" + std::to_string(ch)+";Amplitude over waveform baseline (mV)";
+    hBigAmp.push_back(new TH1F(name.c_str(),title.c_str(),2000,1.,-1.));
+
+    name="hist2ndBiggestPeakAmp_ch" + std::to_string(ch);
+    title="Second biggest peak amplitude above recalculated baseline (may be negative), entries 1-20, channel=" + std::to_string(ch)+";Amplitude over waveform baseline (mV)";
+    h2ndAmp.push_back(new TH1F(name.c_str(),title.c_str(),2000,1.,-1.));
 
     name="histAmplitude21to53_ch"+ std::to_string(ch);
     title="Recalculated amplitude, entries 21-53, channel="+ std::to_string(ch);
@@ -247,6 +259,7 @@ void dataSampleReader()
       int locmin[64]={0};
       int locmax[64]={0};
       int posPeaks=0;
+      std::vector<float> amps;
       enum states {kNA,kRise,kFall,kMin,kMax};
       int jmax=20;
       for (int j=21;j<54;j++)
@@ -292,19 +305,34 @@ void dataSampleReader()
          locmax[j]=2;
        }
       states st=kNA;
+      float amp=-99.;
       for (int j=21;j<54;j++)
        {
         if (rising[j]==1)
          st=kRise;
         if ((locmax[j]==1)&&(st==kRise))
-         st=kMax;
+         {
+          st=kMax;
+          amp=1000.*(samples[j]-baseline);
+         }
         if ((falling[j]==1)&&(st==kMax))
          {
           st=kFall;
-	  posPeaks++;
+          posPeaks++;
+          amps.push_back(amp);
          }
        }
       hPosPeaks[ch]->Fill(posPeaks+0.);
+      if (!amps.empty())
+       {
+        std::sort(amps.begin(),amps.end(),std::greater<float>());
+        if (posPeaks>0)
+         {
+          hBigAmp[ch]->Fill(amps.at(0));
+         }
+        if ((posPeaks>1) && (amps.size()>1))
+         h2ndAmp[ch]->Fill(amps.at(1));
+       }
       if ((neg8<200)&&(rms*1000.>noiseThr[ch]))
       {
        for (int j=1;j<54;j++)
@@ -368,7 +396,7 @@ void dataSampleReader()
    }
   for (const auto& [cha, entries] : noisyBase)
    std::cout<<"Channel "+std::to_string(cha)+", entries:"<<entries<<std::endl;
-  auto outFile=TFile::Open("timeWalks-run044-40pct-v8.root","RECREATE");
+  auto outFile=TFile::Open("timeWalks-run044-40pct-v9b.root","RECREATE");
   hBase21->Write();
   hBase32->Write();
   hBaseRms32->Write();
@@ -386,6 +414,8 @@ void dataSampleReader()
    {
     std::cout<<chWaves[ch].size()<<std::endl;
     hBases[ch]->Write();
+    hBigAmp[ch]->Write();
+    h2ndAmp[ch]->Write();
     hPosPeaks[ch]->Write();
     hBaseRms[ch]->Write();
     hAmpls[ch]->Write();
