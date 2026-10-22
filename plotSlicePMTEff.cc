@@ -2,6 +2,7 @@
 #include "TF1.h"
 #include "TCanvas.h"
 #include "TLegend.h"
+#include "TEfficiency.h"
 #include <cmath>
 
 void plotSlicePMTEff()
@@ -38,6 +39,9 @@ void plotSlicePMTEff()
   TW6coi->Sumw2();
   TW8->Sumw2();
   TW8coi->Sumw2();
+  auto pure1=new TEfficiency(*TW1coi,*TW1);
+  auto pure6=new TEfficiency(*TW6coi,*TW6);
+  auto pure8=new TEfficiency(*TW8coi,*TW8);
   TW6->SetLineColor(kRed);
   TW1->SetLineColor(kRed);
   TW8->SetLineColor(kRed);
@@ -71,16 +75,18 @@ void plotSlicePMTEff()
   leg4->Draw();
   c1.Print("plots/Run44-amplitude-slices-PMT-eff-ch6.png");
   c1.Clear();
-  TW6coi->Divide(TW6);
-  TW1coi->Draw();
-  TW6coi->SetLineColor(kGreen);
-  TW6coi->Draw("same");
-  TW8coi->SetLineColor(kCyan);
-  TW8coi->Draw("same");
-  auto leg3=new TLegend(0.7,0.7,0.9,0.9);
-  leg3->AddEntry(TW1coi,"channel 1 purity","l");
-  leg3->AddEntry(TW6coi,"channel 6 purity","l");
-  leg3->AddEntry(TW8coi,"channel 8 purity","l");
+//  TW6coi->Divide(TW6);
+//  TW1coi->Draw();
+  pure8->SetLineColor(kRed);
+  pure8->Draw();
+  pure6->SetLineColor(kGreen);
+  pure6->Draw("same");
+  pure1->SetLineColor(kCyan);
+  pure1->Draw("same");
+  auto leg3=new TLegend(0.7,0.3,0.9,0.6);
+  leg3->AddEntry(pure1,"channel 1 purity","l");
+  leg3->AddEntry(pure6,"channel 6 purity","l");
+  leg3->AddEntry(pure8,"channel 8 purity","l");
   leg3->Draw();
-  c1.Print("plots/Run44-PMT-coincidence-efficiency-vs-amplitude-ch1-ch6-ch8.png");
+  c1.Print("plots/Run44-PMT-coincidence-efficiency-vs-amplitude-ch1-ch6-ch8-effH.png");
  }
