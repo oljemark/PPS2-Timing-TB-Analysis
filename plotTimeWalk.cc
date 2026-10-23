@@ -22,14 +22,22 @@ void plotTimeWalk()
   float rms_ch2_40[11]={0, 79.9837, 85.003, 105.328, 125.599, 140.365, 144.452, 141.179, 128.905, 110.54, 108.576};
   float rmsE_ch2_40[11]={0, 1.18638 , 0.710879, 1.54387, 3.55522, 6.54395, 7.59827, 8.15546, 6.38809, 8.1552, 32.539};
 
+  float mean_ch5_40[11]= {0, 493.164,  512.021, 525.109, 540.459, 553.165,  559.11, 560.043, 566.462, 582.757, 585.513};
+  float meanE_ch5_40[11]={0, 1.34301, 0.767958, 1.70941, 3.36791, 5.41707, 6.97733, 5.33976, 5.84075, 8.80307, 8.52627};
+  float rms_ch5_40[11]=  {0, 88.2567,   89.793,   107.5, 124.084, 137.575, 138.828, 128.905, 121.541, 122.351, 95.2842};
+  float rmsE_ch5_40[11]= {0, 1.09092, 0.548265, 1.17733, 2.22818, 3.73078, 5.38356, 3.61087, 3.92156, 7.13309, 8.24457};
+
   auto TW1=new TH1F("timeWalkCorr_1","Time walk correction? Offset from highest amplitude (ch.1);Amplitude (mV);Time walk correction (difference vs largest bin, ps)", 11, binEdges);
   auto TW2=new TH1F("timeWalkCorr_2","Time walk correction? Offset from highest amplitude (ch.2);Amplitude (mV);Time walk correction (difference vs largest bin, ps)", 11, binEdges);
+  auto TW5=new TH1F("timeWalkCorr_5","Time walk correction? Offset from highest amplitude (ch.5);Amplitude (mV);Time walk correction (difference vs largest bin, ps)", 11, binEdges);
   auto TW6=new TH1F("timeWalkCorr_6","Time walk correction? Offset from highest amplitude (ch.6);Amplitude (mV);Time walk correction (difference vs largest bin, ps)", 11, binEdges);
 
   auto mean40_1=new TH1F("mean40_1","Fitted mean time difference vs PMT (ch.1);Amplitude (mV);Time difference LGAD - PMT (ps)", 11, binEdges);
   auto rms40_1=new TH1F("rms40_1","Fitted RMS of time difference vs PMT (ch.1);Amplitude (mV);RMS time difference LGAD - PMT (ps)", 11, binEdges);
   auto mean40_2=new TH1F("mean40_2","Fitted mean time difference vs PMT (ch.2);Amplitude (mV);Time difference LGAD - PMT (ps)", 11, binEdges);
   auto rms40_2=new TH1F("rms40_2","Fitted RMS of time difference vs PMT (ch.2);Amplitude (mV);RMS time difference LGAD - PMT (ps)", 11, binEdges);
+  auto mean40_5=new TH1F("mean40_5","Fitted mean time difference vs PMT (ch.5);Amplitude (mV);Time difference LGAD - PMT (ps)", 11, binEdges);
+  auto rms40_5=new TH1F("rms40_5","Fitted RMS of time difference vs PMT (ch.5);Amplitude (mV);RMS time difference LGAD - PMT (ps)", 11, binEdges);
   auto mean40_6=new TH1F("mean40_6","Fitted mean time difference vs PMT (ch.6);Amplitude (mV);Time difference LGAD - PMT (ps)", 11, binEdges);
   auto rms40_6=new TH1F("rms40_6","Fitted RMS of time difference vs PMT (ch.6);Amplitude (mV);RMS time difference LGAD - PMT (ps)", 11, binEdges);
 
@@ -53,6 +61,15 @@ void plotTimeWalk()
     rms40_2->SetBinContent(i+1,rms_ch2_40[i]);
     rms40_2->SetBinError(i+1,rmsE_ch2_40[i]);
 
+    float em5=meanE_ch5_40[i];
+    float em5b=meanE_ch5_40[10];
+    mean40_5->SetBinContent(i+1,mean_ch5_40[i]);
+    mean40_5->SetBinError(i+1,meanE_ch5_40[i]);
+    TW5->SetBinContent(i+1,mean_ch5_40[10]-mean_ch5_40[i]);
+    TW5->SetBinError(i+1,sqrt(em5*em5+em5b*em5b));
+    rms40_5->SetBinContent(i+1,rms_ch5_40[i]);
+    rms40_5->SetBinError(i+1,rmsE_ch5_40[i]);
+
     mean40_6->SetBinContent(i+1,mean_ch6_40[i]);
     mean40_6->SetBinError(i+1,meanE_ch6_40[i]);
     rms40_6->SetBinContent(i+1,rms_ch6_40[i]);
@@ -68,6 +85,10 @@ void plotTimeWalk()
   rms40_6->SetLineColor(kRed);
   TW6->SetLineColor(kRed);
 
+  mean40_5->SetLineColor(kGreen);
+  rms40_5->SetLineColor(kGreen);
+  TW5->SetLineColor(kGreen);
+
   mean40_2->SetLineColor(kBlue);
   rms40_2->SetLineColor(kBlue);
   TW2->SetLineColor(kBlue);
@@ -78,41 +99,47 @@ void plotTimeWalk()
 
   TCanvas c1;
   gStyle->SetOptStat(0);
-  mean40_1->GetYaxis()->SetRangeUser(500.,800.);
-  rms40_1->GetYaxis()->SetRangeUser(80.,150.);
-  TW1->GetYaxis()->SetRangeUser(-10.,160.);
+  mean40_1->GetYaxis()->SetRangeUser(450.,800.);
+  rms40_1->GetYaxis()->SetRangeUser(70.,170.);
+  TW1->GetYaxis()->SetRangeUser(-20.,170.);
   mean40_1->Draw();
   mean40_2->Draw("same");
+  mean40_5->Draw("same");
   mean40_6->Draw("same");
   auto leg=new TLegend(0.7,0.5,0.9,0.7);
   leg->SetHeader("Multipad ch.","C");
   leg->AddEntry(mean40_1,"channel 1","l");
   leg->AddEntry(mean40_2,"channel 2","l");
+  leg->AddEntry(mean40_5,"channel 5","l");
   leg->AddEntry(mean40_6,"channel 6","l");
   leg->Draw();
-  c1.Print("plots/Run44-timeWalk-meanTime-vs-amplitude-ch1-ch2-ch6.png");
+  c1.Print("plots/Run44-timeWalk-meanTime-vs-amplitude-multiPads-1-2-5-6.png");
   c1.Clear();
   rms40_1->Draw();
   rms40_2->Draw("same");
+  rms40_5->Draw("same");
   rms40_6->Draw("same");
   auto leg2=new TLegend(0.7,0.7,0.9,0.9);
   leg2->SetHeader("Multipad ch.","C");
   leg2->AddEntry(rms40_1,"channel 1","l");
   leg2->AddEntry(rms40_2,"channel 2","l");
+  leg2->AddEntry(rms40_5,"channel 5","l");
   leg2->AddEntry(rms40_6,"channel 6","l");
   leg2->Draw();
-  c1.Print("plots/Run44-timeWalk-rmsTime-vs-amplitude-ch1-ch2-ch6.png");
+  c1.Print("plots/Run44-timeWalk-rmsTime-vs-amplitude-multiPads-1-2-5-6.png");
   c1.Clear();
   TW1->Draw();
   TW2->Draw("same");
+  TW5->Draw("same");
   TW6->Draw("same");
   auto leg3=new TLegend(0.7,0.7,0.9,0.9);
   leg3->SetHeader("Multipad ch.","C");
   leg3->AddEntry(TW1,"channel 1","l");
   leg3->AddEntry(TW2,"channel 2","l");
+  leg3->AddEntry(TW5,"channel 5","l");
   leg3->AddEntry(TW6,"channel 6","l");
   leg3->Draw();
-  c1.Print("plots/Run44-timeWalk-correction-vs-amplitude-ch1-ch2-ch6.png");
+  c1.Print("plots/Run44-timeWalk-correction-vs-amplitude-multiPads-1-2-5-6.png");
   c1.Clear();
   gStyle->SetOptFit(1);
   auto walk=new TF1("walk","[0]/TMath::Sqrt(x+[1])+[2]",5.,150.);
@@ -123,10 +150,14 @@ void plotTimeWalk()
   c1.Print("plots/Run44-timeWalk-correction-fit5-ch1.png");
   TW2->Fit("walk");
   c1.Print("plots/Run44-timeWalk-correction-fit5-ch2.png");
+  TW5->Fit("walk");
+  c1.Print("plots/Run44-timeWalk-correction-fit5-ch5.png");
   TW6->Fit("walk");
   c1.Print("plots/Run44-timeWalk-correction-fit5-ch6.png");
   mean40_6->Fit("walk");
   c1.Print("plots/Run44-timeWalk-fit-ch6.png");
+  mean40_5->Fit("walk");
+  c1.Print("plots/Run44-timeWalk-fit-ch5.png");
   mean40_2->Fit("walk");
   c1.Print("plots/Run44-timeWalk-fit-ch2.png");
   mean40_1->Fit("walk");
