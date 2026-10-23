@@ -10,6 +10,7 @@
 
 struct waves
  {
+  int64_t index{0}; // event number
   int64_t coarseTime{0}; // time to first sample, ps
   float amplitude{0.};
   int64_t timeAtDC50{0}; // time at midpoint of rising edge, ps (tune to 40%)
@@ -40,6 +41,8 @@ void dataSampleReader()
   std::vector<TH1F*> hBases,hBaseRms,hAmpls,hAmp2,hDC50s,hCombos,hComboPMT,hWalkComboPMT,hBipole,hPosPeaks;
   std::vector<TH1F*> hWavef8max,hWavef8min;
   std::vector<TH1F*> hBigAmp,h2ndAmp;
+  std::vector<TH1D*> hRealTrkIndexDiffPMT;
+  hRealTrkIndexDiffPMT.reserve(10);
   hBigAmp.reserve(10);
   h2ndAmp.reserve(10);
   hBases.reserve(10);
@@ -122,6 +125,10 @@ void dataSampleReader()
     std::string title="Recalculated baseline, entries 1-20, channel=" + std::to_string(ch);
     hBases.push_back(new TH1F(name.c_str(),title.c_str(),2000,-1.,1.));
 
+    name="histPMTIndexOverlap_ch" + std::to_string(ch);
+    title="Event number difference between LGAD and coincidence in PMT (ev_LGAD - ev_PMT), channel=" + std::to_string(ch);
+    hRealTrkIndexDiffPMT.push_back(new TH1D(name.c_str(),title.c_str(),2000,1.,0.));
+
     name="histPosPeaks_ch" + std::to_string(ch);
     title="Count of full positive peaks (rising+max+falling edges), channel=" + std::to_string(ch);
     hPosPeaks.push_back(new TH1F(name.c_str(),title.c_str(),40,-0.5,39.5));
@@ -192,6 +199,7 @@ void dataSampleReader()
     if (ch==32)
      {
       waves pmt;
+      pmt.index=i;
       pmt.coarseTime = picosec;
       hBase32->Fill(baseline);
       if (1000.*rms > noiseThr[32])
@@ -249,6 +257,7 @@ void dataSampleReader()
     if (ch<10)
      {
       waves wave;
+      wave.index=i;
       wave.coarseTime = picosec;
       hBases[ch]->Fill(baseline);
       hBaseRms[ch]->Fill(1000.*rms);
@@ -429,6 +438,7 @@ void dataSampleReader()
          {
           std::string labl=std::to_string(ch)+",32";
           hNearPMT->Fill(labl.c_str(),1.);
+          hRealTrkIndexDiffPMT[ch]->Fill(wave1.index-pmt.index);
           hComboPMT[ch]->Fill(wave1.timeAtDC50 - pmt.timeAtDC50);
           const auto mV=1000.*wave1.amplitude;
           if ((mV>2.)&&(mV<150.))
@@ -466,6 +476,7 @@ void dataSampleReader()
          }
        }
      }
+    hRealTrkIndexDiffPMT[ch]->Write();
     hComboPMT[ch]->Write();
     for (uint8_t amp=0; amp<11;amp++)
       hWalkComboPMT[ch*11+amp]->Write();
