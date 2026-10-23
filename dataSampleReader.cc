@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <fstream>
 #include <algorithm>
 
 struct waves
@@ -103,7 +104,7 @@ void dataSampleReader()
      std::string title="Time difference of first sample reaching 40 pct of (negative) amplitude (max 1400ps),  PMT channel vs LGAD ch"+ std::to_string(ch2)+";Time difference (ps)";
      if (ch2==8)
       {
-       hComboPMT.push_back(new TH1F(name.c_str(),title.c_str(),1600,-4000.,4000.));
+       hComboPMT.push_back(new TH1F(name.c_str(),title.c_str(),320,-200.,1400.));
       }
      else
      {
@@ -405,7 +406,7 @@ void dataSampleReader()
    }
   for (const auto& [cha, entries] : noisyBase)
    std::cout<<"Channel "+std::to_string(cha)+", entries:"<<entries<<std::endl;
-  auto outFile=TFile::Open("timeWalks-run044-40pct-v9b.root","RECREATE");
+  auto outFile=TFile::Open("maps-run044-40pct-v1.root","RECREATE");
   hBase21->Write();
   hBase32->Write();
   hBaseRms32->Write();
@@ -430,15 +431,20 @@ void dataSampleReader()
     hAmpls[ch]->Write();
     hAmp2[ch]->Write();
     hDC50s[ch]->Write();
+    std::string name="data/coincidencePerChannel"+std::to_string(ch)+".txt";
+    std::ofstream chou(name.c_str(),std::ofstream::trunc);
+    bool opn=chou.is_open();
     for (const auto& pmt: pmtWaves)
      {
       for (const auto& wave1: chWaves[ch])
        {
-        if (std::abs(wave1.timeAtDC50 - pmt.timeAtDC50) < (ch==8 ? 4000 : 1400))
+        if (std::abs(wave1.timeAtDC50 - pmt.timeAtDC50) < (ch==8 ? 1400 : 1400))
          {
           std::string labl=std::to_string(ch)+",32";
           hNearPMT->Fill(labl.c_str(),1.);
           hRealTrkIndexDiffPMT[ch]->Fill(wave1.index-pmt.index);
+          if (opn)
+           chou<<(wave1.index-pmt.index)<<" ("<<wave1.index<<" "<<pmt.index<<")"<<std::endl;
           hComboPMT[ch]->Fill(wave1.timeAtDC50 - pmt.timeAtDC50);
           const auto mV=1000.*wave1.amplitude;
           if ((mV>2.)&&(mV<150.))
@@ -476,6 +482,8 @@ void dataSampleReader()
          }
        }
      }
+    if (opn)
+     chou.close();
     hRealTrkIndexDiffPMT[ch]->Write();
     hComboPMT[ch]->Write();
     for (uint8_t amp=0; amp<11;amp++)
