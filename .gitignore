@@ -4,6 +4,7 @@ data/*
 /plots/*.png
 /plots/*.C
 /dataSampleReader_cc*
+/lowMomReader_cc*
 
 *.py[cod]
 __pycache__
