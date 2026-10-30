@@ -44,28 +44,28 @@ void plotTimeWalkR27()
   for (int i=1;i < 11;i++)
    {
     float em1=meanE_ch1_40[i];
-    float em1b=meanE_ch1_40[10];
+    float em1b=meanE_ch1_40[8];
     mean40_1->SetBinContent(i+1,mean_ch1_40[i]);
     mean40_1->SetBinError(i+1,meanE_ch1_40[i]);
-    TW1->SetBinContent(i+1,mean_ch1_40[10]-mean_ch1_40[i]);
+    TW1->SetBinContent(i+1,mean_ch1_40[8]-mean_ch1_40[i]);
     TW1->SetBinError(i+1,sqrt(em1*em1+em1b*em1b));
     rms40_1->SetBinContent(i+1,rms_ch1_40[i]);
     rms40_1->SetBinError(i+1,rmsE_ch1_40[i]);
 
     float em2=meanE_ch2_40[i];
-    float em2b=meanE_ch2_40[10];
+    float em2b=meanE_ch2_40[8];
     mean40_2->SetBinContent(i+1,mean_ch2_40[i]);
     mean40_2->SetBinError(i+1,meanE_ch2_40[i]);
-    TW2->SetBinContent(i+1,mean_ch2_40[10]-mean_ch2_40[i]);
+    TW2->SetBinContent(i+1,mean_ch2_40[8]-mean_ch2_40[i]);
     TW2->SetBinError(i+1,sqrt(em2*em2+em2b*em2b));
     rms40_2->SetBinContent(i+1,rms_ch2_40[i]);
     rms40_2->SetBinError(i+1,rmsE_ch2_40[i]);
 
     float em5=meanE_ch5_40[i];
-    float em5b=meanE_ch5_40[10];
+    float em5b=meanE_ch5_40[8];
     mean40_5->SetBinContent(i+1,mean_ch5_40[i]);
     mean40_5->SetBinError(i+1,meanE_ch5_40[i]);
-    TW5->SetBinContent(i+1,mean_ch5_40[10]-mean_ch5_40[i]);
+    TW5->SetBinContent(i+1,mean_ch5_40[8]-mean_ch5_40[i]);
     TW5->SetBinError(i+1,sqrt(em5*em5+em5b*em5b));
     rms40_5->SetBinContent(i+1,rms_ch5_40[i]);
     rms40_5->SetBinError(i+1,rmsE_ch5_40[i]);
@@ -75,9 +75,9 @@ void plotTimeWalkR27()
     rms40_6->SetBinContent(i+1,rms_ch6_40[i]);
     rms40_6->SetBinError(i+1,rmsE_ch6_40[i]);
     float em6=meanE_ch6_40[i];
-    float em6b=meanE_ch6_40[10];
+    float em6b=meanE_ch6_40[8];
 
-    TW6->SetBinContent(i+1,mean_ch6_40[10]-mean_ch6_40[i]);
+    TW6->SetBinContent(i+1,mean_ch6_40[8]-mean_ch6_40[i]);
     TW6->SetBinError(i+1,sqrt(em6*em6+em6b*em6b));
 
    }
@@ -101,7 +101,7 @@ void plotTimeWalkR27()
   gStyle->SetOptStat(0);
   mean40_1->GetYaxis()->SetRangeUser(450.,800.);
   rms40_1->GetYaxis()->SetRangeUser(70.,230.);
-  TW1->GetYaxis()->SetRangeUser(-20.,170.);
+  TW1->GetYaxis()->SetRangeUser(-40.,170.);
   mean40_1->Draw();
   mean40_2->Draw("same");
   mean40_5->Draw("same");
@@ -139,7 +139,7 @@ void plotTimeWalkR27()
   leg3->AddEntry(TW5,"channel 5","l");
   leg3->AddEntry(TW6,"channel 6","l");
   leg3->Draw();
-  c1.Print("plots/Run27-timeWalk-correction-vs-amplitude-multiPads-1-2-5-6.png");
+  c1.Print("plots/Run27-timeWalk-correction-vs-amplitude-multiPads-1-2-5-6-45mV-ref.png");
   c1.Clear();
   gStyle->SetOptFit(1);
   auto walk=new TF1("walk","[0]/TMath::Sqrt(x+[1])+[2]",5.,150.);
@@ -147,14 +147,15 @@ void plotTimeWalkR27()
 //  walk->SetParLimits(0,0.05,1000.);
 //  walk->SetParLimits(1,-10.,10.);
 //  walk->SetParLimits(2,-40.,40.);
+  TW1->GetYaxis()->SetRangeUser(-20.,120.);
   TW1->Fit("fex");
-  c1.Print("plots/Run27-timeWalk-correction-expfit5-ch1.png");
+  c1.Print("plots/Run27-timeWalk-correction-expfit5-ch1-45mV-ref.png");
   TW2->Fit("fex");
-  c1.Print("plots/Run27-timeWalk-correction-expfit5-ch2.png");
+  c1.Print("plots/Run27-timeWalk-correction-expfit5-ch2-45mV-ref.png");
   TW5->Fit("fex");
-  c1.Print("plots/Run27-timeWalk-correction-expfit5-ch5.png");
+  c1.Print("plots/Run27-timeWalk-correction-expfit5-ch5-45mV-ref.png");
   TW6->Fit("fex");
-  c1.Print("plots/Run27-timeWalk-correction-expfit5-ch6.png");
+  c1.Print("plots/Run27-timeWalk-correction-expfit5-ch6-45mV-ref.png");
   mean40_6->Fit("walk");
   c1.Print("plots/Run27-timeWalk-fit-ch6.png");
   mean40_5->Fit("walk");
