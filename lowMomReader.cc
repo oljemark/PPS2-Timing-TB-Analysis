@@ -41,7 +41,7 @@ void lowMomReader()
   int64_t lastDC50[10]={0}; // latest picosec time (DC50 corrected) for channel 0-9
   std::vector<TH1F*> hBases,hBaseRms,hAmpls,hAmp2,hDC50s,hCombos,hComboPMT,hWalkComboPMT,hBipole,hPosPeaks;
   std::vector<TH1F*> hWavef8max,hWavef8min;
-  std::vector<TH1F*> hBigAmp,h2ndAmp;
+  std::vector<TH1F*> hBigAmp,h2ndAmp,hTWComboPMT;
   std::vector<TH1D*> hRealTrkIndexDiffPMT;
   hRealTrkIndexDiffPMT.reserve(10);
   hBigAmp.reserve(10);
@@ -54,7 +54,8 @@ void lowMomReader()
   hAmp2.reserve(10);
   hDC50s.reserve(10);
   hComboPMT.reserve(10);
-  hWalkComboPMT.reserve(100);
+  hTWComboPMT.reserve(10);
+  hWalkComboPMT.reserve(110);
   hCombos.reserve(100);
   hWavef8max.reserve(200);
   hWavef8min.reserve(200);
@@ -110,6 +111,9 @@ void lowMomReader()
      {
       hComboPMT.push_back(new TH1F(name.c_str(),title.c_str(),320,-200.,1400.));
      }
+     name="timeDiffPMT_timeWalk_ch32_"+std::to_string(ch2);
+     title="Time difference of first sample reaching 40 pct of (negative) amplitude (max 1400ps),  PMT channel vs LGAD ch"+ std::to_string(ch2)+";Time difference, time walk corrected - exp fit (ps)";
+      hTWComboPMT.push_back(new TH1F(name.c_str(),title.c_str(),320,-200.,1400.));
     for (uint8_t amp=0; amp<11;amp++)
      {
       name="timeDiffPMT_ch32_"+std::to_string(ch2)+"_"+amplis[amp];
@@ -406,7 +410,7 @@ void lowMomReader()
    }
   for (const auto& [cha, entries] : noisyBase)
    std::cout<<"Channel "+std::to_string(cha)+", entries:"<<entries<<std::endl;
-  auto outFile=TFile::Open("maps-run027-lgad03-160V-2GeV-40pct-v1.root","RECREATE");
+  auto outFile=TFile::Open("maps-run027-lgad03-160V-2GeV-40pct-v2.root","RECREATE");
   hBase21->Write();
   hBase32->Write();
   hBaseRms32->Write();
@@ -447,6 +451,17 @@ void lowMomReader()
            chou<<(wave1.index-pmt.index)<<" ("<<wave1.index<<" "<<pmt.index<<")"<<std::endl;
           hComboPMT[ch]->Fill(wave1.timeAtDC50 - pmt.timeAtDC50);
           const auto mV=1000.*wave1.amplitude;
+          int64_t offTW=0;
+          if (ch==1)
+           offTW=std::exp(4.39-0.03501*mV);
+          if (ch==2)
+           offTW=std::exp(4.903-0.05209*mV);
+          if (ch==5)
+           offTW=std::exp(4.788-0.05784*mV);
+          if (ch==6)
+           offTW=std::exp(4.88-0.06276*mV);
+          hTWComboPMT[ch]->Fill(wave1.timeAtDC50 - pmt.timeAtDC50+offTW);
+
           if ((mV>2.)&&(mV<150.))
            {
             uint8_t amp=0;
@@ -473,10 +488,10 @@ void lowMomReader()
                       if (mV<150.)
                        amp=10;
                      }
-                  }
+                   }
+                 }
                }
              }
-           }
             hWalkComboPMT[11*ch+amp]->Fill(wave1.timeAtDC50 - pmt.timeAtDC50);
            }
          }
@@ -486,6 +501,7 @@ void lowMomReader()
      chou.close();
     hRealTrkIndexDiffPMT[ch]->Write();
     hComboPMT[ch]->Write();
+    hTWComboPMT[ch]->Write();
     for (uint8_t amp=0; amp<11;amp++)
       hWalkComboPMT[ch*11+amp]->Write();
 
