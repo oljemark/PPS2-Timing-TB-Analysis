@@ -31,7 +31,7 @@ void lowMomReader()
   auto hPolar=new TH1F("histPolarity","Recalculated amplitude per SAMPIC channel (negative numbers are channels with amplitude < 0);SAMPIC channel",65,-32.5,32.5);
 
   auto hBase32=new TH1F("histBaselinePMT","Recalculated baseline, entries 1-20 (channel 32=MCP-PMT)",2000,-1.,1.);
-  auto hBaseRms32=new TH1F("histBaselineRmsPMTTail6sig","Recalculated baseline rms, entries 1-20 (channel 32=MCP-PMT);Baseline rms above 6-sigma cut (mV)",2000,1.,-1.);
+  auto hBaseRms32=new TH1F("histBaselineRmsPMT","Recalculated baseline rms, entries 1-20 (channel 32=MCP-PMT);Baseline rms (mV)",2000,1.,-1.);
   auto hAmpl32=new TH1F("histAmplitudePMT","Recalculated amplitude (negative), entries 21-53 (channel 32=MCP-PMT)",2000,-1.,1.);
   auto hDC50_32=new TH1F("histDC40SamplePMT","First sample to reach 40 percent of amplitude, entries 21-53 (channel 32=MCP-PMT);Sample number",64,-1.5,62.5);
 
@@ -63,17 +63,17 @@ void lowMomReader()
   std::vector<waves> pmtWaves;
   std::map<uint8_t,int> noisyBase;
   std::map<uint8_t,float> noiseThr;
-  noiseThr[0]=1.97;
-  noiseThr[1]=2.01;
-  noiseThr[2]=1.99;
-  noiseThr[3]=1.86;
-  noiseThr[4]=2.06;
-  noiseThr[5]=1.97;
-  noiseThr[6]=1.95;
-  noiseThr[7]=1.81;
-  noiseThr[8]=1.73;
-  noiseThr[9]=1.83;
-  noiseThr[32]=3.43; // fitted gaussian in the tail above 1.65 (6 sigma from central peak)
+  noiseThr[0]=2.00; //noise only, barely see peak 0..2, no fit
+  noiseThr[1]=2.00;
+  noiseThr[2]=1.98;
+  noiseThr[3]=1.90;
+  noiseThr[4]=1.92;
+  noiseThr[5]=1.95;
+  noiseThr[6]=1.97;
+  noiseThr[7]=1.78;
+  noiseThr[8]=1.80;
+  noiseThr[9]=1.81;
+  noiseThr[32]=0.00; // look at central peak
 
   noisyBase[32]=0;
   for (uint8_t ch=0;ch<10;ch++)
@@ -349,12 +349,16 @@ void lowMomReader()
        }
       if ((neg8<200)&&(rms*1000.>noiseThr[ch]))
       {
+       std::string labCh="Sample number, ch:"+std::to_string(ch);
+       hWavef8min[neg8]->GetXaxis()->SetTitle(labCh.c_str());
        for (int j=1;j<54;j++)
          hWavef8min[neg8]->SetBinContent(j+1,1000.*(samples[j]-baseline));
        neg8++;
       }
       if ((pos8<200)&&(amplitude*1000.>noiseThr[ch]))
       {
+       std::string labCh="Sample number, ch:"+std::to_string(ch);
+       hWavef8max[pos8]->GetXaxis()->SetTitle(labCh.c_str());
        for (int j=1;j<54;j++)
          hWavef8max[pos8]->SetBinContent(j+1,1000.*(samples[j]-baseline));
        pos8++;
@@ -410,7 +414,7 @@ void lowMomReader()
    }
   for (const auto& [cha, entries] : noisyBase)
    std::cout<<"Channel "+std::to_string(cha)+", entries:"<<entries<<std::endl;
-  auto outFile=TFile::Open("maps-run027-lgad03-160V-2GeV-40pct-v2.root","RECREATE");
+  auto outFile=TFile::Open("maps-run027-lgad03-160V-2GeV-40pct-v3.root","RECREATE");
   hBase21->Write();
   hBase32->Write();
   hBaseRms32->Write();
