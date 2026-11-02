@@ -41,6 +41,7 @@ void lowMomReader()
   int64_t lastDC50[10]={0}; // latest picosec time (DC50 corrected) for channel 0-9
   std::vector<TH1F*> hBases,hBaseRms,hAmpls,hAmp2,hDC50s,hCombos,hComboPMT,hWalkComboPMT,hBipole,hPosPeaks;
   std::vector<TH1F*> hWavef8max,hWavef8min;
+  std::vector<TH1F*> hWavefLP,hWavef2P;
   std::vector<TH1F*> hBigAmp,h2ndAmp,hTWComboPMT;
   std::vector<TH1D*> hRealTrkIndexDiffPMT;
   hRealTrkIndexDiffPMT.reserve(10);
@@ -59,6 +60,8 @@ void lowMomReader()
   hCombos.reserve(100);
   hWavef8max.reserve(200);
   hWavef8min.reserve(200);
+  hWavefLP.reserve(200);
+  hWavef2P.reserve(200);
   std::vector<waves> chWaves[10];
   std::vector<waves> pmtWaves;
   std::map<uint8_t,int> noisyBase;
@@ -73,7 +76,7 @@ void lowMomReader()
   noiseThr[7]=1.78;
   noiseThr[8]=1.80;
   noiseThr[9]=1.81;
-  noiseThr[32]=0.00; // look at central peak
+  noiseThr[32]=3.32; // look at right tail - main peak 6s cut is 1.62
 
   noisyBase[32]=0;
   for (uint8_t ch=0;ch<10;ch++)
@@ -86,6 +89,13 @@ void lowMomReader()
      name="waveform_ch_pos_"+std::to_string(ch);
      title="Positive amplitude above baseline RMS noise threshold (6 sigma), example waveform in channels 0-9;Sample number;Amplitude above baseline (mV)";
      hWavef8max.push_back(new TH1F(name.c_str(),title.c_str(),65,-0.5,64.5));
+
+     name="waveform_leftBig_"+std::to_string(ch);
+     title="Lower biggest peak, example waveform in channels 0-9;Sample number;Amplitude above baseline (mV)";
+     hWavefLP.push_back(new TH1F(name.c_str(),title.c_str(),65,-0.5,64.5));
+     name="waveform_2ndBig_"+std::to_string(ch);
+     title="Second biggest peak, example waveform in channels 0-9;Sample number;Amplitude above baseline (mV)";
+     hWavef2P.push_back(new TH1F(name.c_str(),title.c_str(),65,-0.5,64.5));
   }
    for (uint8_t ch=0; ch<11;ch++)
     {
@@ -174,6 +184,8 @@ void lowMomReader()
   std::uint64_t numEntries = reader->GetNEntries();
   int neg8=0;
   int pos8=0;
+  int leftP=0;
+  int secP=0;
 
   //event loop
   for (std::uint64_t i = 0; (i < numEntries)&& (i<7000000); ++i)
@@ -343,9 +355,49 @@ void lowMomReader()
         if (posPeaks>0)
          {
           hBigAmp[ch]->Fill(amps.at(0));
+          bool leftie=false;
+          if ((ch==1)&&(amps.at(0)<3)&&(amps.at(0)>-1))
+           leftie=true;
+          if ((ch==2)&&(amps.at(0)<3.5)&&(amps.at(0)>0.5))
+           leftie=true;
+          if ((ch==3)&&(amps.at(0)<4)&&(amps.at(0)>0))
+           leftie=true;
+          if ((ch==7)&&(amps.at(0)<5)&&(amps.at(0)>0))
+           leftie=true;
+          if ((ch==9)&&(amps.at(0)<3)&&(amps.at(0)>0))
+           leftie=true; //tight cut
+          if ((leftP<200)&&leftie)
+           {
+            std::string labCh="Sample number, ch:"+std::to_string(ch);
+            hWavefLP[leftP]->GetXaxis()->SetTitle(labCh.c_str());
+            for (int j=1;j<54;j++)
+              hWavefLP[leftP]->SetBinContent(j+1,1000.*(samples[j]-baseline));
+            leftP++;
+           }
          }
         if ((posPeaks>1) && (amps.size()>1))
-         h2ndAmp[ch]->Fill(amps.at(1));
+         {
+          h2ndAmp[ch]->Fill(amps.at(1));
+          bool peak=false;
+          if ((ch==1)&&(amps.at(1)<4)&&(amps.at(1)>0))
+           peak=true;
+          if ((ch==2)&&(amps.at(1)<4.5)&&(amps.at(1)>0))
+           peak=true;
+          if ((ch==3)&&(amps.at(1)<4)&&(amps.at(1)>-0.5))
+           peak=true;
+          if ((ch==7)&&(amps.at(1)<4)&&(amps.at(1)>-0.5))
+           peak=true;
+          if ((ch==9)&&(amps.at(1)<3)&&(amps.at(1)>-1))
+           peak=true;
+          if ((secP<200)&&peak)
+           {
+            std::string labCh="Sample number, ch:"+std::to_string(ch);
+            hWavef2P[secP]->GetXaxis()->SetTitle(labCh.c_str());
+            for (int j=1;j<54;j++)
+              hWavef2P[secP]->SetBinContent(j+1,1000.*(samples[j]-baseline));
+            secP++;
+           }
+         }
        }
       if ((neg8<200)&&(rms*1000.>noiseThr[ch]))
       {
@@ -414,7 +466,7 @@ void lowMomReader()
    }
   for (const auto& [cha, entries] : noisyBase)
    std::cout<<"Channel "+std::to_string(cha)+", entries:"<<entries<<std::endl;
-  auto outFile=TFile::Open("maps-run027-lgad03-160V-2GeV-40pct-v3.root","RECREATE");
+  auto outFile=TFile::Open("maps-run027-lgad03-160V-2GeV-40pct-v5.root","RECREATE");
   hBase21->Write();
   hBase32->Write();
   hBaseRms32->Write();
@@ -427,6 +479,8 @@ void lowMomReader()
   {
    hWavef8max[ch8]->Write();
    hWavef8min[ch8]->Write();
+   hWavefLP[ch8]->Write();
+   hWavef2P[ch8]->Write();
   }
   for (uint8_t ch=0; ch<10;ch++)
    {
