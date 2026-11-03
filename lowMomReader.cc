@@ -466,7 +466,7 @@ void lowMomReader()
    }
   for (const auto& [cha, entries] : noisyBase)
    std::cout<<"Channel "+std::to_string(cha)+", entries:"<<entries<<std::endl;
-  auto outFile=TFile::Open("maps-run027-lgad03-160V-2GeV-40pct-v5.root","RECREATE");
+  auto outFile=TFile::Open("maps-run027-lgad03-160V-2GeV-40pct-v6.root","RECREATE");
   hBase21->Write();
   hBase32->Write();
   hBaseRms32->Write();
@@ -518,6 +518,17 @@ void lowMomReader()
            offTW=std::exp(4.788-0.05784*mV);
           if (ch==6)
            offTW=std::exp(4.88-0.06276*mV);
+          // single pads
+          if (ch==3)
+           offTW=std::exp(5.105-0.06074*mV);
+          if (ch==4)
+           offTW=std::exp(5.153-0.04797*mV);
+          if (ch==7)
+           offTW=std::exp(4.822-0.06645*mV);
+          if (ch==8)
+           offTW=std::exp(4.674-0.04927*mV);
+          if (ch==9)
+           offTW=std::exp(4.771-0.04127*mV);
           hTWComboPMT[ch]->Fill(wave1.timeAtDC50 - pmt.timeAtDC50+offTW);
 
           if ((mV>2.)&&(mV<150.))
