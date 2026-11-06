@@ -1,6 +1,7 @@
 #include <ROOT/RNTupleReader.hxx>
 #include <TH1F.h>
 #include <TH1D.h>
+#include <TH2D.h>
 #include <TFile.h>
 #include <array>
 #include <vector>
@@ -14,6 +15,7 @@ struct waves
   int64_t index{0}; // event number
   int64_t coarseTime{0}; // time to first sample, ps
   float amplitude{0.};
+  float ampSigmas{-1.}; // amplitude, in units of the waveform rms
   int64_t timeAtDC50{0}; // time at midpoint of rising edge, ps (tune to 40%)
   int maxbin{0}; // max amplitude bin, out of 64
   int binDC50{0}; // 1st half amplitude bin, out of 64
@@ -44,6 +46,7 @@ void lowMomReader()
   std::vector<TH1F*> hWavefLP,hWavef2P;
   std::vector<TH1F*> hBigAmp,h2ndAmp,hTWComboPMT;
   std::vector<TH1D*> hRealTrkIndexDiffPMT;
+  std::vector<TH2D*> hComboPMTsig;
   hRealTrkIndexDiffPMT.reserve(10);
   hBigAmp.reserve(10);
   h2ndAmp.reserve(10);
@@ -55,6 +58,7 @@ void lowMomReader()
   hAmp2.reserve(10);
   hDC50s.reserve(10);
   hComboPMT.reserve(10);
+  hComboPMTsig.reserve(10);
   hTWComboPMT.reserve(10);
   hWalkComboPMT.reserve(110);
   hCombos.reserve(100);
@@ -121,6 +125,9 @@ void lowMomReader()
      {
       hComboPMT.push_back(new TH1F(name.c_str(),title.c_str(),320,-200.,1400.));
      }
+     name="timeDiffPMT_ampSig_ch32_"+std::to_string(ch2);
+     title="Time difference of first sample reaching 40 pct of (negative) amplitude (max 1400ps),  PMT channel vs LGAD ch"+ std::to_string(ch2)+";Amplitude as multiple of waveform baseline rms"+";Time difference, time walk corrected - exp fit (ps)";
+     hComboPMTsig.push_back(new TH2D(name.c_str(),title.c_str(),100,-1.5,98.5,160,-200.,1400.));
      name="timeDiffPMT_timeWalk_ch32_"+std::to_string(ch2);
      title="Time difference of first sample reaching 40 pct of (negative) amplitude (max 1400ps),  PMT channel vs LGAD ch"+ std::to_string(ch2)+";Time difference, time walk corrected - exp fit (ps)";
       hTWComboPMT.push_back(new TH1F(name.c_str(),title.c_str(),320,-200.,1400.));
@@ -299,6 +306,7 @@ void lowMomReader()
          }
        }
       float amplitude=max-baseline;
+      const float ampSig=amplitude/rms;
       float MAmplitude=min-baseline;
       const int pole=((-MAmplitude > amplitude) ? -ch : ch);
       hPolar->Fill(pole);
@@ -417,6 +425,8 @@ void lowMomReader()
       }
 
       wave.amplitude=amplitude;
+      if (rms>0.)
+       wave.ampSigmas=ampSig;
       wave.maxbin=jmax;
       float dc50=amplitude*thr;
       int j50=20;
@@ -466,7 +476,7 @@ void lowMomReader()
    }
   for (const auto& [cha, entries] : noisyBase)
    std::cout<<"Channel "+std::to_string(cha)+", entries:"<<entries<<std::endl;
-  auto outFile=TFile::Open("maps-run027-lgad03-160V-2GeV-40pct-v6.root","RECREATE");
+  auto outFile=TFile::Open("baseline-rms-amp-units-run027-lgad03-160V-2GeV-40pct-v1.root","RECREATE");
   hBase21->Write();
   hBase32->Write();
   hBaseRms32->Write();
@@ -508,6 +518,7 @@ void lowMomReader()
           if (opn)
            chou<<(wave1.index-pmt.index)<<" ("<<wave1.index<<" "<<pmt.index<<")"<<std::endl;
           hComboPMT[ch]->Fill(wave1.timeAtDC50 - pmt.timeAtDC50);
+          hComboPMTsig[ch]->Fill(wave1.ampSigmas,wave1.timeAtDC50 - pmt.timeAtDC50);
           const auto mV=1000.*wave1.amplitude;
           int64_t offTW=0;
           if (ch==1)
@@ -570,6 +581,7 @@ void lowMomReader()
      chou.close();
     hRealTrkIndexDiffPMT[ch]->Write();
     hComboPMT[ch]->Write();
+    hComboPMTsig[ch]->Write();
     hTWComboPMT[ch]->Write();
     for (uint8_t amp=0; amp<11;amp++)
       hWalkComboPMT[ch*11+amp]->Write();
