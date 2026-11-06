@@ -143,7 +143,7 @@ void plotTimeWalkR27sing()
   rms40_8->Draw("same");
   rms40_9->Draw("same");
   auto leg2=new TLegend(0.7,0.7,0.9,0.9);
-  leg2->SetHeader("Multipad ch.","C");
+  leg2->SetHeader("Single pad ch.","C");
   leg2->AddEntry(rms40_3,"channel 3","l");
   leg2->AddEntry(rms40_4,"channel 4","l");
   leg2->AddEntry(rms40_7,"channel 7","l");
@@ -158,7 +158,7 @@ void plotTimeWalkR27sing()
   TW8->Draw("same");
   TW9->Draw("same");
   auto leg3=new TLegend(0.7,0.7,0.9,0.9);
-  leg3->SetHeader("Multipad ch.","C");
+  leg3->SetHeader("Single pad ch.","C");
   leg3->AddEntry(TW3,"channel 3","l");
   leg3->AddEntry(TW4,"channel 4","l");
   leg3->AddEntry(TW7,"channel 7","l");
