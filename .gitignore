@@ -5,6 +5,7 @@ data/*
 /plots/*.C
 /dataSampleReader_cc*
 /lowMomReader_cc*
+/triReader_cc*
 
 *.py[cod]
 __pycache__
