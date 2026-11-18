@@ -70,37 +70,37 @@ void triReader()
   std::vector<waves> pmtWaves;
   std::map<uint8_t,int> noisyBase;
   std::map<uint8_t,float> noiseThr;
-  noiseThr[0]=2.00;
-  noiseThr[1]=2.00;
-  noiseThr[2]=1.98;
-  noiseThr[3]=1.90;
-  noiseThr[4]=1.92;
-  noiseThr[5]=1.95;
-  noiseThr[6]=1.97;
-  noiseThr[7]=1.78;
-  noiseThr[8]=1.80;
-  noiseThr[9]=1.81;
-  noiseThr[10]=2.00;
-  noiseThr[11]=2.00;
-  noiseThr[12]=1.98;
-  noiseThr[13]=1.90;
-  noiseThr[14]=1.92;
-  noiseThr[15]=1.95;
-  noiseThr[16]=1.97;
-  noiseThr[17]=1.78;
-  noiseThr[18]=1.80;
-  noiseThr[19]=1.81;
-  noiseThr[20]=2.00;
-  noiseThr[21]=2.00;
-  noiseThr[22]=1.98;
-  noiseThr[23]=1.90;
-  noiseThr[24]=1.92;
-  noiseThr[25]=1.95;
-  noiseThr[26]=1.97;
-  noiseThr[27]=1.78;
-  noiseThr[28]=1.80;
-  noiseThr[29]=1.81;
-  noiseThr[32]=3.32; // look at right tail - main peak 6s cut is 1.62
+  noiseThr[0]=1.89;
+  noiseThr[1]=1.95;
+  noiseThr[2]=1.93;
+  noiseThr[3]=1.91;
+  noiseThr[4]=1.96;
+  noiseThr[5]=2.00;
+  noiseThr[6]=1.86;
+  noiseThr[7]=1.87;
+  noiseThr[8]=1.77;
+  noiseThr[9]=1.77;
+  noiseThr[10]=2.05;
+  noiseThr[11]=1.79;
+  noiseThr[12]=1.92;
+  noiseThr[13]=1.92;
+  noiseThr[14]=1.94;
+  noiseThr[15]=1.92;
+  noiseThr[16]=1.87;
+  noiseThr[17]=1.71;
+  noiseThr[18]=1.83;
+  noiseThr[19]=1.80;
+  noiseThr[20]=1.79;
+  noiseThr[21]=1.89;
+  noiseThr[22]=1.80;
+  noiseThr[23]=1.99;
+  noiseThr[24]=1.80;
+  noiseThr[25]=2.47;
+  noiseThr[26]=2.09;
+  noiseThr[27]=2.12;
+  noiseThr[28]=2.39;
+  noiseThr[29]=1.82;
+  noiseThr[32]=1.62; // update this PMT value
 
   noisyBase[32]=0;
   for (uint8_t ch=0;ch<30;ch++)
@@ -496,7 +496,7 @@ void triReader()
    }
   for (const auto& [cha, entries] : noisyBase)
    std::cout<<"Channel "+std::to_string(cha)+", entries:"<<entries<<std::endl;
-  auto outFile=TFile::Open("triple-run068-lgad04-07-08-3GeV-40pct-v1.root","RECREATE");
+  auto outFile=TFile::Open("triple-run068-lgad04-07-08-3GeV-40pct-v2.root","RECREATE");
   hBase21->Write();
   hBase32->Write();
   hBaseRms32->Write();
@@ -523,9 +523,9 @@ void triReader()
     hAmpls[ch]->Write();
     hAmp2[ch]->Write();
     hDC50s[ch]->Write();
-    std::string name="data/coincidencePerChannel_run68_3GeV_"+std::to_string(ch)+".txt";
-    std::ofstream chou(name.c_str(),std::ofstream::trunc);
-    bool opn=chou.is_open();
+//    std::string name="data/coincidencePerChannel_run68_3GeV_"+std::to_string(ch)+".txt";
+//    std::ofstream chou(name.c_str(),std::ofstream::trunc);
+//    bool opn=chou.is_open();
     for (const auto& pmt: pmtWaves)
      {
       for (const auto& wave1: chWaves[ch])
@@ -535,8 +535,8 @@ void triReader()
           std::string labl=std::to_string(ch)+",32";
           hNearPMT->Fill(labl.c_str(),1.);
           hRealTrkIndexDiffPMT[ch]->Fill(wave1.index-pmt.index);
-          if (opn)
-           chou<<(wave1.index-pmt.index)<<" ("<<wave1.index<<" "<<pmt.index<<")"<<std::endl;
+//          if (opn)
+//           chou<<(wave1.index-pmt.index)<<" ("<<wave1.index<<" "<<pmt.index<<")"<<std::endl;
           hComboPMT[ch]->Fill(wave1.timeAtDC50 - pmt.timeAtDC50);
           hComboPMTsig[ch]->Fill(wave1.ampSigmas,wave1.timeAtDC50 - pmt.timeAtDC50);
           const auto mV=1000.*wave1.amplitude;
@@ -597,8 +597,8 @@ void triReader()
          }
        }
      }
-    if (opn)
-     chou.close();
+//    if (opn)
+//     chou.close();
     hRealTrkIndexDiffPMT[ch]->Write();
     hComboPMT[ch]->Write();
     hComboPMTsig[ch]->Write();
