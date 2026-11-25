@@ -24,6 +24,7 @@ struct waves
 
 void triReader()
  {
+  const bool vetoNoise=true;
   auto reader = ROOT::RNTupleReader::Open("sampic_hits", "root_triple_20260815_120332_run68.root");
   auto viewArr = reader->GetView<std::array<float, 64>>("DataSample");
   // may be int32 in 2025 data? No, in earlier version of SAMPIClyser before 0.2.0
@@ -100,7 +101,7 @@ void triReader()
   noiseThr[27]=2.12;
   noiseThr[28]=2.39;
   noiseThr[29]=1.82;
-  noiseThr[32]=1.62; // update this PMT value
+  noiseThr[32]=3.07; // outliers above the right shoulder
 
   noisyBase[32]=0;
   for (uint8_t ch=0;ch<30;ch++)
@@ -217,6 +218,7 @@ void triReader()
   //event loop
   for (std::uint64_t i = 0; (i < numEntries)&& (i<35000000); ++i)
    {
+    bool noise=false;
     // viewArr(i) returns a const reference to the std::array<float, 64> at entry i
     const std::array<float, 64>& samples = viewArr(i);
     const uint8_t ch=viewCh(i);
@@ -238,7 +240,10 @@ void triReader()
     var=var/20.;
     const float rms=std::sqrt(var);
     if (1000.*rms>noiseThr[ch])
-     noisyBase[ch]++;
+     {
+      noisyBase[ch]++;
+      noise=true;
+     }
 
     if (ch==32)
      {
@@ -296,7 +301,8 @@ void triReader()
       const int ps50=(pmt.finebinDC50 * 1000) / 6.4;
       const int64_t time50ps = picosec + ps50;
       pmt.timeAtDC50=time50ps;
-      pmtWaves.push_back(pmt);
+      if (!(vetoNoise&&noise))
+       pmtWaves.push_back(pmt);
      }
     if (ch<30)
      {
@@ -473,7 +479,8 @@ void triReader()
       const int ps50=(wave.finebinDC50 * 1000) / 6.4;
       const int64_t time50ps = picosec + ps50;
       wave.timeAtDC50=time50ps;
-      chWaves[ch].push_back(wave);
+      if (!(vetoNoise&&noise))
+       chWaves[ch].push_back(wave);
       if ((amplitude > 0) && (jmax > 20))
        {
         // for (uint8_t ch2=0; ch2<10; ch2++)
@@ -496,7 +503,7 @@ void triReader()
    }
   for (const auto& [cha, entries] : noisyBase)
    std::cout<<"Channel "+std::to_string(cha)+", entries:"<<entries<<std::endl;
-  auto outFile=TFile::Open("triple-run068-lgad04-07-08-3GeV-40pct-v2.root","RECREATE");
+  auto outFile=TFile::Open("triple-run068-lgad04-07-08-3GeV-40pct-RMSnoiseVetoed-v4.root","RECREATE");
   hBase21->Write();
   hBase32->Write();
   hBaseRms32->Write();
