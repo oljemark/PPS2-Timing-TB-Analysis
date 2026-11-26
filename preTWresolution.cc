@@ -7,7 +7,7 @@
 
 int preTWresolution()
  {
-  auto rd=TFile::Open("triple-run068-lgad04-07-08-3GeV-40pct-v1.root","READ");
+  auto rd=TFile::Open("triple-run068-lgad04-07-08-3GeV-40pct-RMSnoiseVetoed-v4.root","READ");
   if (!rd->IsOpen())
    return 1;
   auto mean=new TH1F("PMTtimeOffsetMean","Mean PMT time delay vs LGAD channel;Channel (number);Fitted mean (ps)",30,-0.5,29.5);
@@ -24,17 +24,17 @@ int preTWresolution()
     mean->SetBinError(ch+1,resp->ParError(1));
     sig->SetBinContent(ch+1,resp->Parameter(2));
     sig->SetBinError(ch+1,resp->ParError(2));
-    std::string plname="plots/auto-run68-PMT-delay-gausFit-ch"+std::to_string(ch)+".png";
+    std::string plname="plots/auto-run68-noiseVetoYES-PMT-delay-gausFit-ch"+std::to_string(ch)+".png";
     c1.Print(plname.c_str());
    }
   c1.Clear();
   gStyle->SetOptStat(0);
   mean->Draw();
-  c1.Print("plots/auto-run68-pmtDelay-meanFit-vs-ch.png");
+  c1.Print("plots/auto-run68-pmtDelay-meanFit-vs-ch-noiseVetoYES.png");
 
   c1.Clear();
   sig->Draw();
-  c1.Print("plots/auto-run68-pmtDelay-resolution-sigmaFit-vs-ch.png");
+  c1.Print("plots/auto-run68-pmtDelay-resolution-sigmaFit-vs-ch-noiseVetoYES.png");
 
   return 0;
  }
